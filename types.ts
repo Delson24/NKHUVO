@@ -1,0 +1,101 @@
+
+export type UserRole = 'organizer' | 'provider' | 'admin';
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  avatar: string;
+  location?: string;
+  phone?: string;
+  whatsapp?: string;
+  bio?: string;
+  status?: 'active' | 'suspended' | 'pending'; // For admin control
+  joinedDate?: string;
+}
+
+export type ServiceCategory = 
+  | 'Musica' 
+  | 'Catering' 
+  | 'Decoracao' 
+  | 'Venue' 
+  | 'FotoVideo' 
+  | 'Entretenimento' 
+  | 'Seguranca' 
+  | 'Equipamentos' 
+  | 'Transporte'
+  | 'Planeamento'
+  | 'VestuarioBeleza';
+
+export interface CategoryDef {
+  id: ServiceCategory;
+  label: string;
+  icon: string;
+  subcategories: string[];
+}
+
+export interface Service {
+  id: string;
+  providerId: string;
+  name: string;
+  category: ServiceCategory;
+  subcategory: string; // New field for specific type
+  description: string;
+  price: number;
+  priceUnit: 'hora' | 'evento' | 'pessoa' | 'dia' | 'unidade';
+  location: string;
+  rating: number;
+  reviews: number;
+  images: string[];
+  features: string[];
+  unavailableDates: string[]; // ISO Date strings YYYY-MM-DD
+  status?: 'approved' | 'pending' | 'rejected'; // For admin moderation
+}
+
+export interface EventItem {
+  id: string;
+  organizerId: string;
+  name: string;
+  date: string; // ISO string
+  type: string;
+  location: string;
+  guests: number;
+  budget: number;
+  status: 'planning' | 'active' | 'completed';
+  services: string[]; // Service IDs
+  tasks: Task[];
+}
+
+export interface Task {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
+export interface Booking {
+  id: string;
+  eventId: string;
+  serviceId: string;
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  date: string;
+  amount: number;
+}
+
+export interface SystemStats {
+  totalUsers: number;
+  totalProviders: number;
+  totalEvents: number;
+  totalRevenue: number;
+  activeBookings: number;
+  growthRate: number; // Percentage
+  recentActivity: ActivityLog[];
+}
+
+export interface ActivityLog {
+  id: string;
+  user: string;
+  action: string;
+  time: string;
+  type: 'info' | 'warning' | 'success';
+}
