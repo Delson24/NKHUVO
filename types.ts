@@ -52,11 +52,14 @@ export type ServiceCategory =
   | 'Planeamento'
   | 'VestuarioBeleza';
 
+export type BookingType = 'time_bound' | 'delivery_bound';
+
 export interface CategoryDef {
   id: ServiceCategory;
   label: string;
   icon: string;
   subcategories: string[];
+  bookingType: BookingType; // New field to determine calendar logic
 }
 
 export interface Service {
@@ -86,7 +89,7 @@ export interface EventItem {
   type: string;
   location: string;
   guests: number;
-  budget: number;
+  budget: number; // Total Budget Limit defined by organizer
   status: 'planning' | 'active' | 'completed';
   services: string[]; // Service IDs
   tasks: Task[];
@@ -104,7 +107,7 @@ export interface Booking {
   serviceId: string;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   date: string; // ISO string with START TIME
-  endDate?: string; // ISO string with END TIME
+  endDate?: string; // ISO string with END TIME (Optional for delivery)
   amount: number;
   location?: string; // Location specified by organizer
 }

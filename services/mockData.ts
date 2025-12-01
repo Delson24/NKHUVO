@@ -1,4 +1,5 @@
 
+
 import { Service, User, EventItem, Booking, CategoryDef, SystemStats } from '../types';
 
 // CENTRALIZED APP LOGO
@@ -6,7 +7,7 @@ export const APP_LOGO = "https://ui-avatars.com/api/?name=N&background=4f46e5&co
 
 export const LOCATIONS = [
   'Maputo Cidade', 'Matola', 'Costa do Sol', 'Sommerschield', 'Polana Cimento', 
-  'Zimpeto', 'Beira', 'Nampula', 'Inhambane', 'Xai-Xai', 'Pemba', 'Tete', 'Chimoio', 'Vilankulos'
+  'Zimpeto', 'Beira', 'Nampula', 'Inhambane', 'Xai-Xai', 'Pemba', 'Tete', 'Chimoio', 'Vilankulos', 'Outra'
 ];
 
 export const CATEGORIES: CategoryDef[] = [
@@ -14,61 +15,71 @@ export const CATEGORIES: CategoryDef[] = [
     id: 'Musica', 
     label: 'DJs e Música', 
     icon: 'Music',
-    subcategories: ['DJs', 'Bandas ao vivo', 'MCs / Apresentadores', 'Saxofonistas', 'Coros Gospel', 'Técnicos de som']
+    subcategories: ['DJs', 'Bandas ao vivo', 'MCs / Apresentadores', 'Saxofonistas', 'Coros Gospel', 'Técnicos de som'],
+    bookingType: 'time_bound'
   },
   { 
     id: 'Catering', 
     label: 'Catering & Bebida', 
     icon: 'Utensils',
-    subcategories: ['Buffet Completo', 'Finger Food', 'Churrasqueiros', 'Bolos de Casamento', 'Bartenders & Cocktails', 'Vinhos & Espumantes']
+    subcategories: ['Buffet Completo', 'Finger Food', 'Churrasqueiros', 'Bolos de Casamento', 'Bartenders & Cocktails', 'Vinhos & Espumantes'],
+    bookingType: 'delivery_bound' // Usually delivery time or start of service
   },
   { 
     id: 'Venue', 
     label: 'Salões & Locais', 
     icon: 'Home',
-    subcategories: ['Salões de Luxo', 'Jardins para Eventos', 'Hotéis', 'Casas de Praia', 'Auditórios Corporativos']
+    subcategories: ['Salões de Luxo', 'Jardins para Eventos', 'Hotéis', 'Casas de Praia', 'Auditórios Corporativos'],
+    bookingType: 'time_bound'
   },
   { 
     id: 'Decoracao', 
     label: 'Decoração', 
     icon: 'Palette',
-    subcategories: ['Decoradores Completos', 'Floristas', 'Aluguer de Mobiliário', 'Iluminação Decorativa', 'Balões e Festas']
+    subcategories: ['Decoradores Completos', 'Floristas', 'Aluguer de Mobiliário', 'Iluminação Decorativa', 'Balões e Festas'],
+    bookingType: 'delivery_bound' // Setup time
   },
   { 
     id: 'FotoVideo', 
     label: 'Fotografia & Vídeo', 
     icon: 'Camera',
-    subcategories: ['Fotografia de Casamento', 'Videografia Cinematográfica', 'Drones', 'Photo Booth / Cabine']
+    subcategories: ['Fotografia de Casamento', 'Videografia Cinematográfica', 'Drones', 'Photo Booth / Cabine'],
+    bookingType: 'time_bound'
   },
   { 
     id: 'VestuarioBeleza', 
     label: 'Vestuário & Beleza', 
     icon: 'Shirt',
-    subcategories: ['Maquilhadores (MUA)', 'Cabeleireiros', 'Estilistas & Alfaiates', 'Aluguer de Vestidos']
+    subcategories: ['Maquilhadores (MUA)', 'Cabeleireiros', 'Estilistas & Alfaiates', 'Aluguer de Vestidos'],
+    bookingType: 'delivery_bound' // Appointment time
   },
   { 
     id: 'Transporte', 
     label: 'Transporte', 
     icon: 'Car',
-    subcategories: ['Carros de Noiva (Luxo)', 'Autocarros para Convidados', 'Limousines', 'Logística']
+    subcategories: ['Carros de Noiva (Luxo)', 'Autocarros para Convidados', 'Limousines', 'Logística'],
+    bookingType: 'time_bound'
   },
   { 
     id: 'Entretenimento', 
     label: 'Entretenimento', 
     icon: 'Smile',
-    subcategories: ['Animadores Infantis', 'Humoristas', 'Dançarinos Tradicionais', 'Mágicos', 'Fogo de Artifício']
+    subcategories: ['Animadores Infantis', 'Humoristas', 'Dançarinos Tradicionais', 'Mágicos', 'Fogo de Artifício'],
+    bookingType: 'time_bound'
   },
   { 
     id: 'Equipamentos', 
     label: 'Equipamentos', 
     icon: 'Speaker',
-    subcategories: ['Tendas & Palcos', 'Geradores', 'Sistema de Som PA', 'Ecrãs LED', 'Climatização']
+    subcategories: ['Tendas & Palcos', 'Geradores', 'Sistema de Som PA', 'Ecrãs LED', 'Climatização'],
+    bookingType: 'delivery_bound' // Delivery/Setup time
   },
   { 
     id: 'Seguranca', 
     label: 'Segurança & Protocolo', 
     icon: 'Shield',
-    subcategories: ['Protocolo & Recepcionistas', 'Segurança Privada', 'Valet Parking']
+    subcategories: ['Protocolo & Recepcionistas', 'Segurança Privada', 'Valet Parking'],
+    bookingType: 'time_bound'
   }
 ];
 

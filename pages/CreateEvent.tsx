@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Calendar, Users, MapPin, DollarSign, PartyPopper, ChevronRight, ChevronLeft, Check } from 'lucide-react';
 import { LOCATIONS, CATEGORIES } from '../services/mockData';
@@ -16,6 +17,7 @@ export const CreateEvent: React.FC<CreateEventProps> = ({ onNavigate, onFinish }
     type: '',
     date: '',
     location: '',
+    customLocation: '',
     guests: 50,
     budget: 50000,
     services: [] as string[]
@@ -35,15 +37,19 @@ export const CreateEvent: React.FC<CreateEventProps> = ({ onNavigate, onFinish }
 
   const handleCreate = () => {
       // Construct the real event object
+      const finalLocation = formData.location === 'Outra' && formData.customLocation 
+        ? formData.customLocation 
+        : formData.location;
+
       const newEvent: EventItem = {
           id: `e-${Date.now()}`,
           organizerId: 'u1', // Defaulting to mock user for now as auth is simulated
           name: formData.name,
           date: formData.date ? new Date(formData.date).toISOString() : new Date().toISOString(),
           type: formData.type,
-          location: formData.location,
+          location: finalLocation,
           guests: formData.guests,
-          budget: formData.budget,
+          budget: formData.budget, // This is the limit/total available
           status: 'planning',
           services: formData.services,
           tasks: [
@@ -125,6 +131,30 @@ export const CreateEvent: React.FC<CreateEventProps> = ({ onNavigate, onFinish }
                   />
                 </div>
               </div>
+
+               {/* Budget Definition */}
+               <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2 flex justify-between">
+                    <span>Orçamento Total Disponível (Teto de Investimento)</span>
+                    <span className="text-indigo-600 font-bold">{new Intl.NumberFormat('pt-MZ', { style: 'currency', currency: 'MZN' }).format(formData.budget)}</span>
+                </label>
+                <input 
+                  type="range" 
+                  min="5000" 
+                  max="2000000" 
+                  step="5000"
+                  value={formData.budget}
+                  onChange={e => setFormData({...formData, budget: parseInt(e.target.value)})}
+                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                />
+                <div className="flex justify-between text-xs text-slate-400 mt-2">
+                  <span>5k MZN</span>
+                  <span>2M MZN+</span>
+                </div>
+                <div className="mt-2 text-xs text-slate-500">
+                    * Este valor será usado para calcular quanto ainda tem disponível à medida que contrata serviços.
+                </div>
+              </div>
             </div>
           )}
 
@@ -135,7 +165,7 @@ export const CreateEvent: React.FC<CreateEventProps> = ({ onNavigate, onFinish }
               
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">Localização</label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                   {LOCATIONS.slice(0, 8).map(loc => (
                     <button
                       key={loc}
@@ -149,7 +179,30 @@ export const CreateEvent: React.FC<CreateEventProps> = ({ onNavigate, onFinish }
                       {loc}
                     </button>
                   ))}
+                   <button
+                      onClick={() => setFormData({...formData, location: 'Outra'})}
+                      className={`p-3 rounded-xl border transition-all text-sm font-medium ${
+                        formData.location === 'Outra'
+                          ? 'border-indigo-600 bg-indigo-50 text-indigo-700' 
+                          : 'border-slate-200 hover:border-indigo-300 text-slate-600'
+                      }`}
+                    >
+                      Outra
+                    </button>
                 </div>
+                
+                {formData.location === 'Outra' && (
+                    <div className="animate-fade-in-up">
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Especifique a Localização</label>
+                        <input 
+                            type="text" 
+                            placeholder="Digite a cidade ou bairro..."
+                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:border-indigo-500 outline-none"
+                            value={formData.customLocation}
+                            onChange={(e) => setFormData({...formData, customLocation: e.target.value})}
+                        />
+                    </div>
+                )}
               </div>
 
               <div>
@@ -191,7 +244,6 @@ export const CreateEvent: React.FC<CreateEventProps> = ({ onNavigate, onFinish }
                         : 'border-slate-100 hover:border-indigo-200 text-slate-600 hover:bg-slate-50'
                     }`}
                   >
-                    {/* Simplified icon representation as we removed the Lucide import for dynamic icons to keep it simple */}
                     <div className="font-bold text-lg">{cat.label.substring(0, 2)}</div>
                     <span className="text-sm font-medium leading-tight">{cat.label}</span>
                     {formData.services.includes(cat.id) && <Check size={16} className="text-indigo-600 absolute top-2 right-2" />}
@@ -209,7 +261,7 @@ export const CreateEvent: React.FC<CreateEventProps> = ({ onNavigate, onFinish }
                 </div>
                 <h2 className="text-2xl font-bold text-slate-900 mb-2">Tudo pronto!</h2>
                 <p className="text-slate-500 mb-8 max-w-md mx-auto">
-                   O evento <strong>{formData.name}</strong> está pronto para ser criado em {formData.location}.
+                   O evento <strong>{formData.name}</strong> está pronto para ser criado em {formData.location === 'Outra' ? formData.customLocation : formData.location}.
                 </p>
 
                 <div className="bg-slate-50 rounded-2xl p-6 text-left max-w-sm mx-auto mb-8 space-y-3">
@@ -224,6 +276,10 @@ export const CreateEvent: React.FC<CreateEventProps> = ({ onNavigate, onFinish }
                    <div className="flex justify-between">
                       <span className="text-slate-500">Serviços</span>
                       <span className="font-semibold text-slate-800">{formData.services.length} selecionados</span>
+                   </div>
+                   <div className="flex justify-between pt-2 border-t border-slate-200">
+                      <span className="text-slate-500">Orçamento Disp.</span>
+                      <span className="font-bold text-green-600">{new Intl.NumberFormat('pt-MZ', { style: 'currency', currency: 'MZN' }).format(formData.budget)}</span>
                    </div>
                 </div>
              </div>

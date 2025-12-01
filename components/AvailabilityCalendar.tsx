@@ -1,19 +1,27 @@
 
+
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Clock, AlertCircle, Calendar as CalendarIcon, ArrowRight } from 'lucide-react';
-import { BusinessHours, Booking } from '../types';
+import { ChevronLeft, ChevronRight, Clock, AlertCircle, Calendar as CalendarIcon, ArrowRight, Truck } from 'lucide-react';
+import { BusinessHours, Booking, BookingType } from '../types';
 
 interface Props {
   unavailableDates: string[]; // ISO 'YYYY-MM-DD' (Full blocked days)
   bookedSlots?: Booking[]; // Array of bookings to check overlap
   onSelect: (date: Date, startTime: string, endTime: string) => void;
   businessHours?: BusinessHours;
+  bookingType?: BookingType; // 'time_bound' (Start-End) or 'delivery_bound' (Single time)
 }
 
 const DAYS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
-export const AvailabilityCalendar: React.FC<Props> = ({ unavailableDates, bookedSlots = [], onSelect, businessHours }) => {
+export const AvailabilityCalendar: React.FC<Props> = ({ 
+    unavailableDates, 
+    bookedSlots = [], 
+    onSelect, 
+    businessHours, 
+    bookingType = 'time_bound' 
+}) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedStartTime, setSelectedStartTime] = useState<string>('');
@@ -53,8 +61,10 @@ export const AvailabilityCalendar: React.FC<Props> = ({ unavailableDates, booked
 
   }, [businessHours]);
 
-  // 2. Update Available End Times when Start Time changes
+  // 2. Update Available End Times when Start Time changes (ONLY FOR TIME_BOUND)
   useEffect(() => {
+    if (bookingType === 'delivery_bound') return; // Skip logic for delivery
+
     if (!selectedStartTime || !selectedDate) {
         setAvailableEndTimes([]);
         return;
@@ -67,39 +77,33 @@ export const AvailabilityCalendar: React.FC<Props> = ({ unavailableDates, booked
     // Find business close hour
     if (businessHours?.type === 'custom' && businessHours.end) {
         limitHour = parseInt(businessHours.end.split(':')[0]);
-        // Allow ending exactly at close time (e.g. open until 17:00, can book 16:00-17:00)
     }
 
     // Check for next booking on the same day to set a ceiling
     if (selectedDate) {
         const dateStr = selectedDate.toISOString().split('T')[0];
-        
-        // Find bookings on this day that start AFTER the selected start time
         const bookingsToday = bookedSlots.filter(b => b.date.startsWith(dateStr));
         const nextBooking = bookingsToday
             .map(b => parseInt(b.date.split('T')[1].split(':')[0]))
             .filter(h => h > startHour)
-            .sort((a,b) => a - b)[0]; // The earliest booking after start
+            .sort((a,b) => a - b)[0];
 
         if (nextBooking) {
             limitHour = Math.min(limitHour, nextBooking);
         }
     }
 
-    // Generate valid end times (at least 1 hour duration)
     for (let i = startHour + 1; i <= limitHour; i++) {
-         const h = i % 24; // Handle midnight wrap if needed, mostly simplistic here
-         // If wrapped to 0 but start was 23, that's valid.
+         const h = i % 24;
          const time = `${h.toString().padStart(2, '0')}:00`;
          potentialEnds.push(time);
-         // If we hit the limit hour (which might be a booking start or close time), stop.
          if (i === limitHour) break; 
     }
 
     setAvailableEndTimes(potentialEnds);
-    setSelectedEndTime(''); // Reset end time when start changes
+    setSelectedEndTime('');
 
-  }, [selectedStartTime, selectedDate, businessHours, bookedSlots]);
+  }, [selectedStartTime, selectedDate, businessHours, bookedSlots, bookingType]);
 
 
   const getDaysInMonth = (date: Date) => {
@@ -119,7 +123,6 @@ export const AvailabilityCalendar: React.FC<Props> = ({ unavailableDates, booked
     const checkDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
     const dateString = checkDate.toISOString().split('T')[0];
     
-    // Check if passed
     const today = new Date();
     today.setHours(0,0,0,0);
     if (checkDate < today) return true;
@@ -137,13 +140,18 @@ export const AvailabilityCalendar: React.FC<Props> = ({ unavailableDates, booked
         if (!booking.date.startsWith(dateStr)) return false;
         
         const startH = parseInt(booking.date.split('T')[1].split(':')[0]);
-        // Default duration 1h if no endDate, otherwise parse endDate
+        // For delivery bound, we might check if a specific time is TAKEN, but usually they can handle multiple.
+        // For simplicity, we assume strictly time-bound resources block the slot.
+        // If bookingType is delivery, we might be looser, but let's check basic overlap.
+        
         let endH = startH + 1; 
         if (booking.endDate) {
             endH = parseInt(booking.endDate.split('T')[1].split(':')[0]);
         }
+        
+        // If the booking is delivery (no end time usually), it occupies just that slot
+        if (!booking.endDate) return slotHour === startH;
 
-        // Slot is booked if it falls within [start, end)
         return slotHour >= startH && slotHour < endH;
      });
   };
@@ -158,7 +166,12 @@ export const AvailabilityCalendar: React.FC<Props> = ({ unavailableDates, booked
 
   const handleStartTimeSelect = (time: string) => {
     setSelectedStartTime(time);
-    // End time is reset by effect
+    
+    // If delivery bound, selecting start time IS the action, no end time needed
+    if (bookingType === 'delivery_bound' && selectedDate) {
+        // We pass the same time as end time for API consistency, or handle it upstream
+        onSelect(selectedDate, time, time); 
+    }
   };
 
   const handleEndTimeSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -218,7 +231,9 @@ export const AvailabilityCalendar: React.FC<Props> = ({ unavailableDates, booked
          <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
             <CalendarIcon size={20} />
          </div>
-         <h3 className="font-bold text-slate-900 text-lg">Verificar Disponibilidade</h3>
+         <h3 className="font-bold text-slate-900 text-lg">
+             {bookingType === 'delivery_bound' ? 'Data de Entrega' : 'Verificar Disponibilidade'}
+         </h3>
       </div>
       
       <div className="flex items-center justify-between mb-6">
@@ -248,11 +263,14 @@ export const AvailabilityCalendar: React.FC<Props> = ({ unavailableDates, booked
       <div className={`transition-all duration-500 overflow-hidden ${selectedDate ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
          <div className="border-t border-slate-100 pt-4 space-y-4">
             
-            {/* Start Time Grid */}
+            {/* Start Time Grid (Or Delivery Time) */}
             <div>
                 <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center">
-                <Clock size={14} className="mr-2 text-indigo-500" /> 
-                Hora de Início
+                    {bookingType === 'delivery_bound' ? (
+                        <><Truck size={14} className="mr-2 text-indigo-500" /> Hora Prevista de Entrega</>
+                    ) : (
+                        <><Clock size={14} className="mr-2 text-indigo-500" /> Hora de Início</>
+                    )}
                 </h4>
                 
                 <div className="grid grid-cols-3 gap-2">
@@ -278,11 +296,11 @@ export const AvailabilityCalendar: React.FC<Props> = ({ unavailableDates, booked
                     );
                 })}
                 </div>
-                {timeSlots.length === 0 && <p className="text-xs text-slate-400 mt-2">Nenhum horário disponível para este dia.</p>}
+                {timeSlots.length === 0 && <p className="text-xs text-slate-400 mt-2">Nenhum horário disponível.</p>}
             </div>
 
-            {/* End Time Selector (Conditioned on Start Time) */}
-            {selectedStartTime && (
+            {/* End Time Selector (ONLY FOR TIME_BOUND) */}
+            {bookingType === 'time_bound' && selectedStartTime && (
                 <div className="animate-fade-in-up bg-slate-50 p-4 rounded-2xl border border-slate-200">
                     <div className="flex items-center gap-2 mb-2 text-sm font-bold text-slate-800">
                         <span>Das {selectedStartTime}</span>
@@ -300,11 +318,12 @@ export const AvailabilityCalendar: React.FC<Props> = ({ unavailableDates, booked
                             <option key={time} value={time}>{time}</option>
                         ))}
                     </select>
-                    {availableEndTimes.length === 0 ? (
-                        <p className="text-xs text-red-400 mt-2">Sem horários para prolongar (conflito de agenda).</p>
-                    ) : (
-                        <p className="text-xs text-slate-400 mt-2">Selecione o horário de término do evento.</p>
-                    )}
+                </div>
+            )}
+
+            {bookingType === 'delivery_bound' && selectedStartTime && (
+                <div className="animate-fade-in-up p-3 bg-green-50 rounded-xl border border-green-100 text-green-700 text-xs font-medium text-center">
+                    Entrega/Recolha agendada para as {selectedStartTime}.
                 </div>
             )}
 
@@ -313,7 +332,7 @@ export const AvailabilityCalendar: React.FC<Props> = ({ unavailableDates, booked
       
       {!selectedDate && (
          <div className="flex items-center justify-center p-3 bg-slate-50 rounded-xl text-xs text-slate-500 gap-2 border border-slate-100 border-dashed">
-            <AlertCircle size={14} /> Selecione uma data para ver horários
+            <AlertCircle size={14} /> Selecione uma data
          </div>
       )}
     </div>

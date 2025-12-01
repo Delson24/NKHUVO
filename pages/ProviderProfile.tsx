@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Service, ServiceCategory, BusinessHours, PortfolioItem } from '../types';
 import { CATEGORIES, LOCATIONS } from '../services/mockData';
-import { Button } from '../components/UI';
+import { Button, Toast, FileUploader } from '../components/UI';
 import { MapPin, Phone, Save, Camera, Plus, Trash2, Edit2, ArrowLeft, MessageCircle, Loader2, X, User as UserIcon, AlignLeft, ExternalLink, Clock, Image as ImageIcon, CheckCircle } from 'lucide-react';
 
 interface Props {
@@ -18,12 +18,23 @@ export const ProviderProfile: React.FC<Props> = ({ user, onNavigate, services, o
   const [isSaving, setIsSaving] = useState(false);
   const [profileData, setProfileData] = useState({
     name: user.name,
+    avatar: user.avatar,
     location: user.location || '',
+    customLocation: '', // To hold custom input
     phone: user.phone || '',
     whatsapp: user.whatsapp || '',
     bio: user.bio || '',
     businessHours: user.businessHours || { type: '24h', start: '09:00', end: '17:00' } as BusinessHours
   });
+
+  // Notifications
+  const [toast, setToast] = useState<{msg: string, type: 'success' | 'error', visible: boolean}>({
+    msg: '', type: 'success', visible: false
+  });
+
+  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
+    setToast({ msg, type, visible: true });
+  };
 
   // Portfolio State
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>(user.portfolio || []);
@@ -35,7 +46,7 @@ export const ProviderProfile: React.FC<Props> = ({ user, onNavigate, services, o
 
   // Modal State for New Service
   const [isAddServiceOpen, setIsAddServiceOpen] = useState(false);
-  const [newService, setNewService] = useState<Partial<Service>>({
+  const [newService, setNewService] = useState<Partial<Service> & { customSubcategory?: string }>({
      name: '', price: 0, description: '', location: user.location || 'Maputo', features: [], images: []
   });
 
@@ -43,16 +54,30 @@ export const ProviderProfile: React.FC<Props> = ({ user, onNavigate, services, o
 
   const handleSaveProfile = () => {
     setIsSaving(true);
+    // Combine location if custom
+    const finalLocation = profileData.location === 'Outra' && profileData.customLocation 
+        ? profileData.customLocation 
+        : profileData.location;
+
     // Simulate API save
     setTimeout(() => {
       setIsSaving(false);
       setIsEditing(false);
+      // Ideally update parent state here
+      showToast('Perfil atualizado com sucesso!');
     }, 1000);
+  };
+
+  const handleAvatarChange = (base64: string) => {
+    setProfileData(prev => ({ ...prev, avatar: base64 }));
   };
 
   const handleAddPortfolio = (e: React.FormEvent) => {
     e.preventDefault();
-    if(!newPortfolio.title || !newPortfolio.image) return;
+    if(!newPortfolio.title || !newPortfolio.image) {
+        showToast('Por favor, adicione um título e uma imagem.', 'error');
+        return;
+    }
 
     const item: PortfolioItem = {
       id: `pf-${Date.now()}`,
@@ -65,18 +90,27 @@ export const ProviderProfile: React.FC<Props> = ({ user, onNavigate, services, o
     setPortfolio([item, ...portfolio]);
     setIsAddPortfolioOpen(false);
     setNewPortfolio({ title: '', description: '', image: '' });
+    showToast('Trabalho adicionado ao portfólio!');
   };
 
   const handleSubmitService = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newService.name || !newService.category || !newService.price) return;
+    if (!newService.name || !newService.category || !newService.price) {
+        showToast('Preencha os campos obrigatórios.', 'error');
+        return;
+    }
+
+    // Determine subcategory
+    const sub = newService.subcategory === 'Outro' && newService.customSubcategory 
+        ? newService.customSubcategory 
+        : newService.subcategory || 'Geral';
 
     const serviceToAdd: Service = {
       id: `s-${Date.now()}`,
       providerId: user.id,
       name: newService.name,
       category: newService.category as ServiceCategory,
-      subcategory: newService.subcategory || 'Geral',
+      subcategory: sub,
       description: newService.description || '',
       price: Number(newService.price),
       priceUnit: newService.priceUnit || 'evento',
@@ -84,7 +118,7 @@ export const ProviderProfile: React.FC<Props> = ({ user, onNavigate, services, o
       rating: 5.0, // New service starts with 5 stars
       reviews: 0,
       images: [
-         'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=600&auto=format&fit=crop' // Placeholder
+         newService.images?.[0] || 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=600&auto=format&fit=crop' 
       ],
       features: ['Serviço Profissional', 'Garantia de Qualidade'],
       unavailableDates: [],
@@ -94,11 +128,19 @@ export const ProviderProfile: React.FC<Props> = ({ user, onNavigate, services, o
     
     onAddService(serviceToAdd);
     setIsAddServiceOpen(false);
-    setNewService({ name: '', price: 0, description: '', location: 'Maputo' });
+    setNewService({ name: '', price: 0, description: '', location: 'Maputo', images: [] });
+    showToast('Serviço criado! Aguardando aprovação.');
   };
 
   return (
     <div className="min-h-screen bg-slate-50 pt-24 pb-12 px-4">
+      <Toast 
+        message={toast.msg} 
+        type={toast.type} 
+        isVisible={toast.visible} 
+        onClose={() => setToast({ ...toast, visible: false })} 
+      />
+
       <div className="max-w-5xl mx-auto">
         
         <button 
@@ -117,11 +159,26 @@ export const ProviderProfile: React.FC<Props> = ({ user, onNavigate, services, o
                {/* Avatar Section */}
                <div className="flex flex-col items-center mb-6">
                  <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-slate-50 mb-4 shadow-lg bg-slate-100 relative group cursor-pointer">
-                    <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                    <img src={profileData.avatar} alt={profileData.name} className="w-full h-full object-cover" />
+                    
+                    {/* Hidden input label for avatar upload */}
                     {isEditing && (
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                        <label className="absolute inset-0 bg-black/40 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
                             <Camera size={24} />
-                        </div>
+                            <input 
+                                type="file" 
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if(file) {
+                                        const reader = new FileReader();
+                                        reader.onloadend = () => handleAvatarChange(reader.result as string);
+                                        reader.readAsDataURL(file);
+                                    }
+                                }}
+                            />
+                        </label>
                     )}
                  </div>
                </div>
@@ -131,7 +188,7 @@ export const ProviderProfile: React.FC<Props> = ({ user, onNavigate, services, o
                   <div className="text-center">
                       <h2 className="text-xl font-bold text-slate-900">{profileData.name}</h2>
                       <div className="flex items-center justify-center text-slate-500 text-sm mt-1 mb-4">
-                        <MapPin size={14} className="mr-1" /> {profileData.location || 'Sem localização'}
+                        <MapPin size={14} className="mr-1" /> {profileData.location === 'Outra' ? profileData.customLocation : profileData.location || 'Sem localização'}
                       </div>
                       
                       {profileData.bio && (
@@ -205,8 +262,17 @@ export const ProviderProfile: React.FC<Props> = ({ user, onNavigate, services, o
                            >
                               <option value="">Selecione...</option>
                               {LOCATIONS.map(l => <option key={l} value={l}>{l}</option>)}
+                              <option value="Outra">Outra</option>
                            </select>
                         </div>
+                        {profileData.location === 'Outra' && (
+                           <input 
+                              className="w-full mt-2 pl-3 pr-3 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:border-indigo-500 outline-none" 
+                              placeholder="Digite a localização..." 
+                              value={profileData.customLocation} 
+                              onChange={(e) => setProfileData({...profileData, customLocation: e.target.value})}
+                           />
+                        )}
                      </div>
 
                      <div>
@@ -419,10 +485,41 @@ export const ProviderProfile: React.FC<Props> = ({ user, onNavigate, services, o
                         </select>
                      </div>
                      <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">Preço (MZN)</label>
-                        <input required type="number" className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 focus:border-indigo-500 outline-none focus:ring-2 focus:ring-indigo-50 transition-all" placeholder="0.00" value={newService.price} onChange={e => setNewService({...newService, price: Number(e.target.value)})} />
+                         <label className="block text-sm font-bold text-slate-700 mb-2">Subcategoria</label>
+                         <select 
+                             required={!newService.subcategory || newService.subcategory !== 'Outro'}
+                             className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 focus:border-indigo-500 outline-none focus:ring-2 focus:ring-indigo-50 transition-all mb-2" 
+                             onChange={e => setNewService({...newService, subcategory: e.target.value})}
+                         >
+                            <option value="">Selecione...</option>
+                            {newService.category && CATEGORIES.find(c => c.id === newService.category)?.subcategories.map(sub => (
+                                <option key={sub} value={sub}>{sub}</option>
+                            ))}
+                            <option value="Outro">Outro (Personalizar)</option>
+                         </select>
+                         {newService.subcategory === 'Outro' && (
+                             <input 
+                                className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 focus:border-indigo-500 outline-none"
+                                placeholder="Especifique a subcategoria..."
+                                value={newService.customSubcategory || ''}
+                                onChange={e => setNewService({...newService, customSubcategory: e.target.value})}
+                             />
+                         )}
                      </div>
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Preço (MZN)</label>
+                    <input required type="number" className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 focus:border-indigo-500 outline-none focus:ring-2 focus:ring-indigo-50 transition-all" placeholder="0.00" value={newService.price} onChange={e => setNewService({...newService, price: Number(e.target.value)})} />
+                  </div>
+                  
+                  {/* Service Image Upload */}
+                  <FileUploader 
+                     label="Imagem Principal do Serviço"
+                     onFileSelect={(base64) => setNewService(prev => ({ ...prev, images: [base64] }))}
+                     currentImage={newService.images?.[0]}
+                  />
+
                   <div>
                      <label className="block text-sm font-bold text-slate-700 mb-2">Descrição</label>
                      <textarea className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 h-32 focus:border-indigo-500 outline-none focus:ring-2 focus:ring-indigo-50 transition-all resize-none" placeholder="Descreva os detalhes do serviço, o que inclui, etc..." value={newService.description} onChange={e => setNewService({...newService, description: e.target.value})}></textarea>
@@ -452,10 +549,14 @@ export const ProviderProfile: React.FC<Props> = ({ user, onNavigate, services, o
                      <label className="block text-sm font-bold text-slate-700 mb-2">Descrição Curta</label>
                      <textarea className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 h-20 outline-none resize-none" placeholder="Detalhes..." value={newPortfolio.description} onChange={e => setNewPortfolio({...newPortfolio, description: e.target.value})}></textarea>
                   </div>
-                  <div>
-                     <label className="block text-sm font-bold text-slate-700 mb-2">URL da Imagem</label>
-                     <input required className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none" placeholder="https://..." value={newPortfolio.image} onChange={e => setNewPortfolio({...newPortfolio, image: e.target.value})} />
-                  </div>
+                  
+                  {/* File Upload for Portfolio */}
+                  <FileUploader 
+                     label="Carregar Foto"
+                     onFileSelect={(base64) => setNewPortfolio(prev => ({ ...prev, image: base64 }))}
+                     currentImage={newPortfolio.image}
+                  />
+
                   <Button type="submit" className="w-full mt-2">Adicionar ao Portfólio</Button>
                </form>
             </div>

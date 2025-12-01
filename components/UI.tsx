@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { Star, MapPin } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Star, MapPin, CheckCircle, XCircle, Upload, Image as ImageIcon, X } from 'lucide-react';
 import { Service } from '../types';
 
 export const Button: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'outline' }> = ({ 
@@ -100,6 +100,107 @@ export const ServiceCard: React.FC<{ service: Service, onClick: () => void }> = 
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
           </div>
         </div>
+      </div>
+    </div>
+  );
+};
+
+// --- NEW COMPONENT: TOAST NOTIFICATION ---
+export interface ToastProps {
+  message: string;
+  type?: 'success' | 'error';
+  isVisible: boolean;
+  onClose: () => void;
+}
+
+export const Toast: React.FC<ToastProps> = ({ message, type = 'success', isVisible, onClose }) => {
+  useEffect(() => {
+    if (isVisible) {
+      const timer = setTimeout(() => {
+        onClose();
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [isVisible, onClose]);
+
+  if (!isVisible) return null;
+
+  return (
+    <div className={`fixed top-6 right-6 z-[100] flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl transition-all duration-500 animate-fade-in-down border ${
+      type === 'success' 
+        ? 'bg-white border-green-100 text-slate-800' 
+        : 'bg-white border-red-100 text-slate-800'
+    }`}>
+      <div className={`p-2 rounded-full ${type === 'success' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+        {type === 'success' ? <CheckCircle size={20} /> : <XCircle size={20} />}
+      </div>
+      <div>
+        <h4 className={`font-bold text-sm ${type === 'success' ? 'text-green-700' : 'text-red-700'}`}>
+          {type === 'success' ? 'Sucesso!' : 'Erro'}
+        </h4>
+        <p className="text-sm font-medium text-slate-600">{message}</p>
+      </div>
+      <button onClick={onClose} className="ml-4 text-slate-400 hover:text-slate-600">
+        <X size={16} />
+      </button>
+    </div>
+  );
+};
+
+// --- NEW COMPONENT: FILE UPLOADER ---
+interface FileUploaderProps {
+  label: string;
+  onFileSelect: (base64: string) => void;
+  currentImage?: string;
+  className?: string;
+}
+
+export const FileUploader: React.FC<FileUploaderProps> = ({ label, onFileSelect, currentImage, className = '' }) => {
+  const [preview, setPreview] = useState<string>(currentImage || '');
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setPreview(result);
+        onFileSelect(result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  return (
+    <div className={`group ${className}`}>
+      <label className="block text-sm font-bold text-slate-700 mb-2">{label}</label>
+      <div className="relative w-full aspect-video rounded-2xl overflow-hidden border-2 border-dashed border-slate-200 bg-slate-50 hover:border-indigo-400 hover:bg-indigo-50 transition-all cursor-pointer group-focus-within:ring-4 group-focus-within:ring-indigo-100">
+        <input 
+          type="file" 
+          accept="image/*"
+          onChange={handleFileChange}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+        />
+        
+        {preview ? (
+          <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 z-10">
+            <div className="p-3 bg-white rounded-full shadow-sm mb-2 group-hover:scale-110 transition-transform">
+              <Upload size={20} className="text-indigo-500" />
+            </div>
+            <span className="text-xs font-bold text-slate-500">Clique para carregar imagem</span>
+            <span className="text-[10px] text-slate-400 mt-1">PNG, JPG até 5MB</span>
+          </div>
+        )}
+
+        {preview && (
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
+             <span className="text-white font-bold text-sm flex items-center gap-2">
+               <ImageIcon size={16} /> Alterar Imagem
+             </span>
+          </div>
+        )}
       </div>
     </div>
   );

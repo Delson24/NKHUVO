@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useEffect } from 'react';
 import { Navbar, Footer } from './components/Layout';
 import { Home } from './pages/Home';
@@ -9,12 +11,12 @@ import { AdminDashboard } from './pages/AdminDashboard';
 import { Explore } from './pages/Explore';
 import { Auth } from './pages/Auth';
 import { CreateEvent } from './pages/CreateEvent';
-import { MOCK_SERVICES, MOCK_BOOKINGS, APP_LOGO, MOCK_EVENTS, MOCK_USER, MOCK_PROVIDER_USER, MOCK_ADMIN } from './services/mockData';
-import { User, Service, Booking, EventItem, ChatMessage } from './types';
-import { Button } from './components/UI';
+import { MOCK_SERVICES, MOCK_BOOKINGS, APP_LOGO, MOCK_EVENTS, MOCK_USER, MOCK_PROVIDER_USER, MOCK_ADMIN, CATEGORIES } from './services/mockData';
+import { User, Service, Booking, EventItem, ChatMessage, BookingType } from './types';
+import { Button, Toast } from './components/UI';
 import { ChatModal } from './components/ChatModal';
 import { AvailabilityCalendar } from './components/AvailabilityCalendar';
-import { ArrowLeft, MessageCircle, Calendar, Camera, MapPin, Clock } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Calendar, Camera, MapPin, Clock, Truck } from 'lucide-react';
 
 // Simplified Router
 type Route = { path: string; params?: any };
@@ -31,6 +33,15 @@ function App() {
   const [bookings, setBookings] = useState<Booking[]>(MOCK_BOOKINGS);
   const [events, setEvents] = useState<EventItem[]>(MOCK_EVENTS);
   const [allUsers, setAllUsers] = useState<User[]>([MOCK_USER, MOCK_PROVIDER_USER, MOCK_ADMIN]);
+
+  // Toast Notification State
+  const [toast, setToast] = useState<{msg: string, type: 'success' | 'error', visible: boolean}>({
+    msg: '', type: 'success', visible: false
+  });
+  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
+    setToast({ msg, type, visible: true });
+  };
+
 
   // Chat State
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -88,13 +99,25 @@ function App() {
       navigate('/dashboard');
   };
 
-  const handleCreateBooking = (serviceId: string, price: number, date: Date) => {
+  const handleUpdateEvent = (updatedEvent: EventItem) => {
+    setEvents(prev => prev.map(e => e.id === updatedEvent.id ? updatedEvent : e));
+    showToast('Evento atualizado com sucesso!');
+  };
+
+  const handleRemoveBooking = (bookingId: string) => {
+    if (window.confirm("Tem a certeza que deseja cancelar este serviço?")) {
+      setBookings(prev => prev.filter(b => b.id !== bookingId));
+      showToast('Serviço removido e orçamento atualizado.');
+    }
+  };
+
+  const handleCreateBooking = (serviceId: string, price: number, date: Date, bookingType: BookingType) => {
      if (!user) {
         navigate('/login');
         return;
      }
      if (!bookingLocation) {
-        alert("Por favor, indique a localização do evento.");
+        showToast("Por favor, indique a localização do evento.", "error");
         return;
      }
      
@@ -105,14 +128,25 @@ function App() {
      bookingDate.setHours(startH, startM, 0, 0);
 
      // Construct End Time ISO
-     const endTime = bookingSelection?.endTime || "11:00";
-     const [endH, endM] = endTime.split(':').map(Number);
-     const endDate = new Date(date);
-     endDate.setHours(endH, endM, 0, 0);
+     let endDate;
+     if (bookingType === 'time_bound') {
+         const endTime = bookingSelection?.endTime || "11:00";
+         const [endH, endM] = endTime.split(':').map(Number);
+         endDate = new Date(date);
+         endDate.setHours(endH, endM, 0, 0);
+     } else {
+         // For delivery, endDate matches start date or isn't strictly used for blocking
+         endDate = new Date(bookingDate);
+     }
+
+     // Find the most recent event created by user to attach booking to, or use temp
+     // In a real app, user would select event from dropdown
+     const userLastEvent = events.find(e => e.organizerId === user.id);
+     const eventId = userLastEvent ? userLastEvent.id : 'temp-event';
 
      const newBooking: Booking = {
         id: `b-${Date.now()}`,
-        eventId: 'temp-event',
+        eventId: eventId,
         serviceId: serviceId,
         status: 'pending',
         date: bookingDate.toISOString(), // Start Time
@@ -121,7 +155,7 @@ function App() {
         location: bookingLocation
      };
      setBookings(prev => [newBooking, ...prev]);
-     alert('Reserva enviada com sucesso! O fornecedor confirmará o intervalo de tempo.');
+     showToast('Reserva enviada! O fornecedor confirmará o horário.');
      navigate('/dashboard');
   };
 
@@ -224,7 +258,19 @@ function App() {
       
       case '/dashboard':
         if (!user || user.role !== 'organizer') { navigate('/login'); return null; }
-        return <OrganizerDashboard user={user} onNavigate={navigate} events={events} />;
+        // Filter events so user only sees their own
+        const myEvents = events.filter(e => e.organizerId === user.id);
+        return (
+          <OrganizerDashboard 
+            user={user} 
+            onNavigate={navigate} 
+            events={myEvents} 
+            bookings={bookings}
+            services={services}
+            onUpdateEvent={handleUpdateEvent}
+            onRemoveBooking={handleRemoveBooking}
+          />
+        );
 
       case '/provider-dashboard':
         if (!user || user.role !== 'provider') { navigate('/login'); return null; }
@@ -266,6 +312,10 @@ function App() {
         const service = services.find(s => s.id === sId);
         if (!service) return <div>Serviço não encontrado</div>;
         
+        // Determine booking type (time or delivery)
+        const categoryDef = CATEGORIES.find(c => c.id === service.category);
+        const bookingType: BookingType = categoryDef?.bookingType || 'time_bound';
+
         // Find bookings for this service (Pass full booking objects to Calendar for interval checking)
         const serviceBookings = bookings.filter(b => b.serviceId === service.id && b.status === 'confirmed');
 
@@ -332,6 +382,7 @@ function App() {
                               bookedSlots={serviceBookings} 
                               onSelect={(date, startTime, endTime) => setBookingSelection({date, startTime, endTime})}
                               businessHours={service.businessHours} 
+                              bookingType={bookingType}
                             />
                         </div>
                         
@@ -346,14 +397,19 @@ function App() {
                                 </div>
                                 {bookingSelection && (
                                    <div className="hidden sm:block text-right">
-                                       <div className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Intervalo Selecionado</div>
+                                       <div className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">
+                                           {bookingType === 'delivery_bound' ? 'Entrega Prevista' : 'Intervalo Selecionado'}
+                                       </div>
                                        <div className="text-sm text-emerald-600 font-bold flex items-center justify-end">
                                           <Calendar size={14} className="mr-1" />
                                           {bookingSelection.date.getDate()}/{bookingSelection.date.getMonth()+1}
                                        </div>
                                        <div className="text-sm text-slate-600 font-bold flex items-center justify-end mt-0.5">
-                                          <Clock size={14} className="mr-1 text-slate-400" />
-                                          {bookingSelection.startTime} - {bookingSelection.endTime}
+                                          {bookingType === 'delivery_bound' ? (
+                                              <><Truck size={14} className="mr-1 text-slate-400" /> {bookingSelection.startTime}</>
+                                          ) : (
+                                              <><Clock size={14} className="mr-1 text-slate-400" /> {bookingSelection.startTime} - {bookingSelection.endTime}</>
+                                          )}
                                        </div>
                                    </div>
                                 )}
@@ -362,7 +418,7 @@ function App() {
                             {/* Booking Location Input */}
                             {bookingSelection && (
                                 <div className="animate-fade-in-up">
-                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Localização do Evento</label>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Localização do Evento / Entrega</label>
                                     <div className="relative">
                                         <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                                         <input 
@@ -404,7 +460,7 @@ function App() {
                                 <div className="col-span-2">
                                     <Button 
                                         className={`w-full justify-center py-4 text-lg transition-all shadow-lg ${bookingSelection && bookingLocation ? 'bg-indigo-600 shadow-indigo-200' : 'bg-slate-300 cursor-not-allowed hover:bg-slate-300 shadow-none'}`}
-                                        onClick={() => (bookingSelection && bookingLocation) ? handleCreateBooking(service.id, service.price, bookingSelection.date) : null}
+                                        onClick={() => (bookingSelection && bookingLocation) ? handleCreateBooking(service.id, service.price, bookingSelection.date, bookingType) : null}
                                         disabled={!bookingSelection || !bookingLocation}
                                     >
                                         {bookingSelection ? 'Confirmar Pedido' : 'Selecione uma Data e Horário'}
@@ -456,6 +512,12 @@ function App() {
 
   return (
     <div className="font-sans text-slate-900 antialiased selection:bg-indigo-100 selection:text-indigo-800">
+      <Toast 
+        message={toast.msg} 
+        type={toast.type} 
+        isVisible={toast.visible} 
+        onClose={() => setToast({ ...toast, visible: false })} 
+      />
       <Navbar user={user} onLogout={() => { setUser(null); navigate('/'); }} onNavigate={navigate} />
       {renderContent()}
       <Footer />
