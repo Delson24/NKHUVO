@@ -9,7 +9,7 @@ import { AdminDashboard } from './pages/AdminDashboard';
 import { Explore } from './pages/Explore';
 import { Auth } from './pages/Auth';
 import { CreateEvent } from './pages/CreateEvent';
-import { MOCK_SERVICES, MOCK_BOOKINGS } from './services/mockData';
+import { MOCK_SERVICES, MOCK_BOOKINGS, APP_LOGO } from './services/mockData';
 import { User, Service, Booking } from './types';
 import { Button } from './components/UI';
 import { ChatModal } from './components/ChatModal';
@@ -23,6 +23,9 @@ function App() {
   const [route, setRoute] = useState<Route>({ path: '/' });
   const [user, setUser] = useState<User | null>(null);
   
+  // App Loading State (Splash Screen)
+  const [isAppLoading, setIsAppLoading] = useState(true);
+  
   // GLOBAL STATE (Simulating Backend)
   const [services, setServices] = useState<Service[]>(MOCK_SERVICES);
   const [bookings, setBookings] = useState<Booking[]>(MOCK_BOOKINGS);
@@ -33,6 +36,14 @@ function App() {
 
   // Booking State
   const [bookingSelection, setBookingSelection] = useState<{date: Date, time: string} | null>(null);
+
+  // Simulate Initial Loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsAppLoading(false);
+    }, 2500); // 2.5 seconds splash screen
+    return () => clearTimeout(timer);
+  }, []);
 
   const navigate = (path: string, params?: any) => {
     window.scrollTo(0, 0);
@@ -81,6 +92,44 @@ function App() {
     setActiveServiceChat({ serviceName, providerId });
     setIsChatOpen(true);
   };
+
+  // Splash Screen Render
+  if (isAppLoading) {
+    return (
+      <div className="fixed inset-0 bg-slate-50 z-[9999] flex flex-col items-center justify-center transition-opacity duration-700">
+        <div className="relative flex flex-col items-center">
+           {/* Glow Effect */}
+           <div className="absolute inset-0 bg-indigo-500 rounded-full blur-3xl opacity-20 animate-pulse"></div>
+           
+           {/* Logo Animation */}
+           <div className="relative z-10 mb-8 animate-float">
+              <img 
+                src={APP_LOGO} 
+                alt="NKHUVO Loading" 
+                className="w-24 h-24 rounded-2xl shadow-2xl object-cover"
+              />
+           </div>
+           
+           {/* Text Animation */}
+           <h1 className="text-3xl font-bold text-slate-900 tracking-[0.3em] animate-pulse">
+             NKHUVO<span className="text-indigo-600">.</span>
+           </h1>
+           
+           {/* Loading Bar */}
+           <div className="mt-8 w-48 h-1 bg-slate-200 rounded-full overflow-hidden">
+             <div className="h-full bg-indigo-600 rounded-full animate-[loading_2s_ease-in-out_infinite]" style={{width: '50%'}}></div>
+           </div>
+        </div>
+        
+        <style>{`
+          @keyframes loading {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(200%); }
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   const renderContent = () => {
     switch (route.path) {
