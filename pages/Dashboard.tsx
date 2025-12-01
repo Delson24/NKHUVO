@@ -1,19 +1,17 @@
-
 import React, { useState } from 'react';
 import { User, EventItem, Task } from '../types';
-import { MOCK_EVENTS } from '../services/mockData';
-import { Plus, Calendar, CheckCircle, Clock, DollarSign, Wand2, Loader2, Trash2 } from 'lucide-react';
+import { Plus, Calendar, CheckCircle, Clock, DollarSign, Wand2, Loader2, Trash2, Check } from 'lucide-react';
 import { generateEventPlan, AIPlanResponse } from '../services/geminiService';
 import { Button } from '../components/UI';
 
 interface DashboardProps {
   user: User;
   onNavigate: (path: string) => void;
+  events: EventItem[];
 }
 
-export const OrganizerDashboard: React.FC<DashboardProps> = ({ user, onNavigate }) => {
+export const OrganizerDashboard: React.FC<DashboardProps> = ({ user, onNavigate, events }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'events' | 'ai-planner'>('overview');
-  const [events, setEvents] = useState<EventItem[]>(MOCK_EVENTS);
 
   // AI Planner State
   const [aiForm, setAiForm] = useState({ type: '', guests: 50, location: '', vibe: '' });
@@ -65,7 +63,7 @@ export const OrganizerDashboard: React.FC<DashboardProps> = ({ user, onNavigate 
         {activeTab === 'overview' && (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-              <StatCard label="Eventos Ativos" value="1" icon={Calendar} color="bg-indigo-500" />
+              <StatCard label="Eventos Ativos" value={events.length.toString()} icon={Calendar} color="bg-indigo-500" />
               <StatCard label="Tarefas Pendentes" value="2" icon={Clock} color="bg-amber-500" />
               <StatCard label="Tarefas Concluídas" value="8" icon={CheckCircle} color="bg-emerald-500" />
               <StatCard label="Orçamento Gasto" value="350k MZN" icon={DollarSign} color="bg-rose-500" />
@@ -75,7 +73,7 @@ export const OrganizerDashboard: React.FC<DashboardProps> = ({ user, onNavigate 
               {/* Event List */}
               <div className="lg:col-span-2 space-y-6">
                 <h2 className="text-xl font-bold text-slate-900">Os teus eventos</h2>
-                {events.map(event => (
+                {events.length > 0 ? events.map(event => (
                   <div key={event.id} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start mb-4">
                       <div>
@@ -106,7 +104,7 @@ export const OrganizerDashboard: React.FC<DashboardProps> = ({ user, onNavigate 
                       <div className="w-full bg-slate-100 rounded-full h-2 mb-6">
                         <div 
                           className="bg-indigo-600 h-2 rounded-full transition-all duration-1000" 
-                          style={{ width: `${(event.tasks.filter(t => t.completed).length / event.tasks.length) * 100}%` }}
+                          style={{ width: event.tasks.length > 0 ? `${(event.tasks.filter(t => t.completed).length / event.tasks.length) * 100}%` : '0%' }}
                         ></div>
                       </div>
                       
@@ -116,14 +114,19 @@ export const OrganizerDashboard: React.FC<DashboardProps> = ({ user, onNavigate 
                       </div>
                     </div>
                   </div>
-                ))}
+                )) : (
+                  <div className="bg-white p-12 rounded-3xl border border-dashed border-slate-200 text-center">
+                     <p className="text-slate-500 mb-4">Ainda não criou nenhum evento.</p>
+                     <Button onClick={() => onNavigate('/create-event')}>Começar Agora</Button>
+                  </div>
+                )}
               </div>
 
               {/* Quick Tasks */}
               <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm h-fit">
                 <h2 className="text-lg font-bold text-slate-900 mb-4">Tarefas Rápidas</h2>
                 <ul className="space-y-3">
-                  {events[0]?.tasks.map(task => (
+                  {events[0]?.tasks.slice(0, 5).map(task => (
                     <li key={task.id} className="flex items-center group cursor-pointer">
                       <div className={`w-5 h-5 rounded-full border-2 mr-3 flex items-center justify-center transition-colors ${task.completed ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 group-hover:border-indigo-500'}`}>
                         {task.completed && <Check size={12} className="text-white" />}
@@ -133,6 +136,9 @@ export const OrganizerDashboard: React.FC<DashboardProps> = ({ user, onNavigate 
                       </span>
                     </li>
                   ))}
+                  {(!events[0] || events[0].tasks.length === 0) && (
+                     <li className="text-slate-400 text-sm italic">Sem tarefas pendentes.</li>
+                  )}
                   <li className="flex items-center text-indigo-600 cursor-pointer pt-2">
                     <Plus size={16} className="mr-2" />
                     <span className="text-sm font-medium">Adicionar Tarefa</span>
@@ -273,21 +279,3 @@ export const OrganizerDashboard: React.FC<DashboardProps> = ({ user, onNavigate 
     </div>
   );
 };
-
-// Simple Icon component helper for the task list since I didn't import Check above
-const Check = ({ size, className }: any) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    width={size} 
-    height={size} 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="3" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={className}
-  >
-    <polyline points="20 6 9 17 4 12"></polyline>
-  </svg>
-);

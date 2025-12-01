@@ -2,11 +2,11 @@
 import { Service, User, EventItem, Booking, CategoryDef, SystemStats } from '../types';
 
 // CENTRALIZED APP LOGO
-// Substitua este URL pelo URL da imagem real que você carregou
 export const APP_LOGO = "https://ui-avatars.com/api/?name=N&background=4f46e5&color=fff&size=128&rounded=true&bold=true&font-size=0.6";
 
 export const LOCATIONS = [
-  'Maputo', 'Matola', 'Beira', 'Nampula', 'Inhambane', 'Xai-Xai', 'Pemba', 'Tete', 'Chimoio', 'Quelimane'
+  'Maputo Cidade', 'Matola', 'Costa do Sol', 'Sommerschield', 'Polana Cimento', 
+  'Zimpeto', 'Beira', 'Nampula', 'Inhambane', 'Xai-Xai', 'Pemba', 'Tete', 'Chimoio', 'Vilankulos'
 ];
 
 export const CATEGORIES: CategoryDef[] = [
@@ -14,67 +14,61 @@ export const CATEGORIES: CategoryDef[] = [
     id: 'Musica', 
     label: 'DJs e Música', 
     icon: 'Music',
-    subcategories: ['DJs', 'Bandas ao vivo', 'MCs / Apresentadores', 'Técnicos de som']
+    subcategories: ['DJs', 'Bandas ao vivo', 'MCs / Apresentadores', 'Saxofonistas', 'Coros Gospel', 'Técnicos de som']
   },
   { 
     id: 'Catering', 
     label: 'Catering & Bebida', 
     icon: 'Utensils',
-    subcategories: ['Cozinheiros', 'Empresas de catering', 'Churrasqueiros', 'Pastelaria / Bolos', 'Bartenders', 'Fornecedores de bebidas']
-  },
-  { 
-    id: 'Decoracao', 
-    label: 'Decoração', 
-    icon: 'Palette',
-    subcategories: ['Decoradores', 'Floristas', 'Aluguer de mobiliário', 'Iluminação decorativa', 'Cenografia']
+    subcategories: ['Buffet Completo', 'Finger Food', 'Churrasqueiros', 'Bolos de Casamento', 'Bartenders & Cocktails', 'Vinhos & Espumantes']
   },
   { 
     id: 'Venue', 
     label: 'Salões & Locais', 
     icon: 'Home',
-    subcategories: ['Salões de eventos', 'Quintas e jardins', 'Hotéis com salas', 'Espaços costeiros', 'Auditórios']
+    subcategories: ['Salões de Luxo', 'Jardins para Eventos', 'Hotéis', 'Casas de Praia', 'Auditórios Corporativos']
+  },
+  { 
+    id: 'Decoracao', 
+    label: 'Decoração', 
+    icon: 'Palette',
+    subcategories: ['Decoradores Completos', 'Floristas', 'Aluguer de Mobiliário', 'Iluminação Decorativa', 'Balões e Festas']
   },
   { 
     id: 'FotoVideo', 
     label: 'Fotografia & Vídeo', 
     icon: 'Camera',
-    subcategories: ['Fotógrafos', 'Videógrafos', 'Drones', 'Live streaming']
-  },
-  { 
-    id: 'Entretenimento', 
-    label: 'Entretenimento', 
-    icon: 'Smile',
-    subcategories: ['Animadores infantis', 'Humoristas', 'Dançarinos', 'Performers culturais', 'Artistas de fogo/magia']
-  },
-  { 
-    id: 'Seguranca', 
-    label: 'Segurança', 
-    icon: 'Shield',
-    subcategories: ['Seguranças privados', 'Controladores de entrada', 'Brigada médica', 'Paramédicos']
-  },
-  { 
-    id: 'Equipamentos', 
-    label: 'Equipamentos', 
-    icon: 'Speaker',
-    subcategories: ['Som', 'Iluminação', 'Tendas / coberturas', 'Palcos', 'Ventilação / AC', 'Geradores']
-  },
-  { 
-    id: 'Transporte', 
-    label: 'Transporte', 
-    icon: 'Car',
-    subcategories: ['Aluguer de viaturas', 'Carros de noiva', 'Transporte para convidados', 'Logística']
-  },
-  { 
-    id: 'Planeamento', 
-    label: 'Planeamento', 
-    icon: 'ClipboardList',
-    subcategories: ['Planeadores de eventos', 'Coordenadores', 'Consultores de protocolo']
+    subcategories: ['Fotografia de Casamento', 'Videografia Cinematográfica', 'Drones', 'Photo Booth / Cabine']
   },
   { 
     id: 'VestuarioBeleza', 
     label: 'Vestuário & Beleza', 
     icon: 'Shirt',
-    subcategories: ['Costureiras / Alfaiates', 'Roupas de gala', 'Maquilhadores', 'Cabeleireiros']
+    subcategories: ['Maquilhadores (MUA)', 'Cabeleireiros', 'Estilistas & Alfaiates', 'Aluguer de Vestidos']
+  },
+  { 
+    id: 'Transporte', 
+    label: 'Transporte', 
+    icon: 'Car',
+    subcategories: ['Carros de Noiva (Luxo)', 'Autocarros para Convidados', 'Limousines', 'Logística']
+  },
+  { 
+    id: 'Entretenimento', 
+    label: 'Entretenimento', 
+    icon: 'Smile',
+    subcategories: ['Animadores Infantis', 'Humoristas', 'Dançarinos Tradicionais', 'Mágicos', 'Fogo de Artifício']
+  },
+  { 
+    id: 'Equipamentos', 
+    label: 'Equipamentos', 
+    icon: 'Speaker',
+    subcategories: ['Tendas & Palcos', 'Geradores', 'Sistema de Som PA', 'Ecrãs LED', 'Climatização']
+  },
+  { 
+    id: 'Seguranca', 
+    label: 'Segurança & Protocolo', 
+    icon: 'Shield',
+    subcategories: ['Protocolo & Recepcionistas', 'Segurança Privada', 'Valet Parking']
   }
 ];
 
@@ -85,203 +79,226 @@ const getFutureDate = (days: number) => {
   return date.toISOString().split('T')[0];
 };
 
+// --- REALISTIC SEED DATA FOR MOZAMBIQUE (SERVICES ONLY) ---
+// We keep services so the app has content to browse.
 export const MOCK_SERVICES: Service[] = [
+  // VENUES
   {
-    id: 's1',
-    providerId: 'p1',
-    name: 'DJ Maninho Vibes',
-    category: 'Musica',
-    subcategory: 'DJs',
-    description: 'O melhor do Afro-house, Amapiano e Kizomba para o seu casamento ou festa privada. Equipamento de som JBL de última geração.',
-    price: 15000,
-    priceUnit: 'evento',
-    location: 'Maputo',
-    rating: 4.8,
-    reviews: 124,
-    images: [
-      'https://images.unsplash.com/photo-1571266028243-e4733b0f0bb1?q=80&w=1200&auto=format&fit=crop', 
-      'https://images.unsplash.com/photo-1642286469658-208b06626330?q=80&w=1200&auto=format&fit=crop'
-    ],
-    features: ['Sistema de som incluído', 'Iluminação básica', '5 horas de show', 'Playlist personalizada'],
-    unavailableDates: [getFutureDate(2), getFutureDate(5), getFutureDate(6)],
-    status: 'approved'
-  },
-  {
-    id: 's2',
-    providerId: 'p2',
-    name: 'Sabores da Terra Catering',
-    category: 'Catering',
-    subcategory: 'Empresas de catering',
-    description: 'Buffet completo com pratos típicos moçambicanos (Matapa, Frango à Zambeziana) e cozinha internacional.',
-    price: 800,
-    priceUnit: 'pessoa',
-    location: 'Matola',
-    rating: 4.9,
-    reviews: 85,
-    images: [
-      'https://images.unsplash.com/photo-1555244162-803834f70033?q=80&w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1519225421980-715cb0202128?q=80&w=1200&auto=format&fit=crop'
-    ],
-    features: ['Garçons incluídos', 'Louça premium', 'Bebidas não alcoólicas', 'Sobremesas'],
-    unavailableDates: [getFutureDate(1), getFutureDate(10)],
-    status: 'approved'
-  },
-  {
-    id: 's3',
-    providerId: 'p3',
-    name: 'Quinta do Sol',
+    id: 's_venue_01',
+    providerId: 'p_venue_01',
+    name: 'Glória Hotel Maputo - Salão Nobre',
     category: 'Venue',
-    subcategory: 'Quintas e jardins',
-    description: 'Espaço verde luxuoso para casamentos ao ar livre com vista para o mar. Capacidade para 300 pessoas.',
-    price: 50000,
+    subcategory: 'Hotéis',
+    description: 'O local mais prestigiado de Maputo para grandes casamentos e conferências. Vista para a baía, serviço de 5 estrelas e capacidade para 800 pessoas sentadas.',
+    price: 150000,
     priceUnit: 'dia',
-    location: 'Inhambane',
+    location: 'Costa do Sol',
     rating: 5.0,
-    reviews: 42,
+    reviews: 89,
     images: [
       'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1464366400600-7168b8af0bc3?q=80&w=1200&auto=format&fit=crop'
+      'https://images.unsplash.com/photo-1551632436-cbf8dd354ca8?q=80&w=1200&auto=format&fit=crop'
     ],
-    features: ['Estacionamento privado', 'Cozinha industrial', 'Gerador de emergência', 'Suite para noivos'],
-    unavailableDates: [getFutureDate(3), getFutureDate(4), getFutureDate(12)],
-    status: 'approved'
+    features: ['Gerador Industrial', 'Catering Exclusivo', 'Estacionamento 200 carros', 'Suite Presidencial incluída'],
+    unavailableDates: [getFutureDate(5), getFutureDate(12), getFutureDate(13)],
+    status: 'approved',
+    businessHours: { type: '24h' }
   },
   {
-    id: 's4',
-    providerId: 'p4',
-    name: 'Lentes Mágicas Studio',
-    category: 'FotoVideo',
-    subcategory: 'Fotógrafos',
-    description: 'Capturamos os momentos mais emocionantes do seu dia especial com um olhar artístico e documental.',
+    id: 's_venue_02',
+    providerId: 'p_venue_02',
+    name: 'Quinta das Acácias',
+    category: 'Venue',
+    subcategory: 'Jardins para Eventos',
+    description: 'Um refúgio verde na Matola Rio. Perfeito para casamentos ao ar livre e festas de aniversário. Ambiente rústico e elegante.',
+    price: 45000,
+    priceUnit: 'evento',
+    location: 'Matola',
+    rating: 4.7,
+    reviews: 42,
+    images: [
+      'https://images.unsplash.com/photo-1464366400600-7168b8af0bc3?q=80&w=1200&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1533090161767-e6ffed986c88?q=80&w=1200&auto=format&fit=crop'
+    ],
+    features: ['Jardim Paisagístico', 'Cozinha de Apoio', 'Piscina Decorativa', 'Segurança 24h'],
+    unavailableDates: [getFutureDate(2)],
+    status: 'approved',
+    businessHours: { type: 'custom', start: '08:00', end: '23:00' }
+  },
+  
+  // DJ & MUSIC
+  {
+    id: 's_music_01',
+    providerId: 'p_music_01',
+    name: 'DJ Supaman Mozambique',
+    category: 'Musica',
+    subcategory: 'DJs',
+    description: 'O rei do Afro-house e Amapiano. Experiência em festivais e casamentos de elite. Trago o meu próprio sistema de som JBL.',
     price: 25000,
     priceUnit: 'evento',
-    location: 'Beira',
-    rating: 4.7,
-    reviews: 56,
+    location: 'Maputo Cidade',
+    rating: 4.9,
+    reviews: 156,
     images: [
-      'https://images.unsplash.com/photo-1537633552985-df8429e8048b?q=80&w=1200&auto=format&fit=crop'
+      'https://images.unsplash.com/photo-1571266028243-e4733b0f0bb1?q=80&w=1200&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1642286469658-208b06626330?q=80&w=1200&auto=format&fit=crop'
     ],
-    features: ['Drone 4K', 'Álbum impresso 30x30', 'Edição em 48h', '2 Fotógrafos'],
+    features: ['Som Completo (PA)', 'Luzes de Pista', 'MC incluído', 'Playlist personalizada'],
+    unavailableDates: [getFutureDate(1), getFutureDate(2), getFutureDate(8)],
+    status: 'approved',
+    businessHours: { type: 'custom', start: '18:00', end: '05:00' }
+  },
+  {
+    id: 's_music_02',
+    providerId: 'p_music_02',
+    name: 'Banda Marrabenta Brasil',
+    category: 'Musica',
+    subcategory: 'Bandas ao vivo',
+    description: 'Música ao vivo de alta qualidade. Tocamos Marrabenta, Jazz, Kizomba e Clássicos Internacionais. Banda de 6 elementos.',
+    price: 60000,
+    priceUnit: 'evento',
+    location: 'Maputo Cidade',
+    rating: 4.8,
+    reviews: 30,
+    images: [
+      'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=1200&auto=format&fit=crop'
+    ],
+    features: ['Instrumentos Próprios', 'Show de 4 horas', 'Música de Fundo para Jantar'],
     unavailableDates: [],
     status: 'approved'
   },
+
+  // CATERING
   {
-    id: 's5',
-    providerId: 'p5',
-    name: 'Delícias da Mamã',
+    id: 's_food_01',
+    providerId: 'p_food_01',
+    name: 'Sabores da Zambézia Catering',
     category: 'Catering',
-    subcategory: 'Pastelaria / Bolos',
-    description: 'Bolos de casamento artísticos e salgados deliciosos para todos os gostos. Especialidade em bolos de noiva tradicionais.',
-    price: 3500,
-    priceUnit: 'unidade',
-    location: 'Maputo',
+    subcategory: 'Buffet Completo',
+    description: 'A verdadeira gastronomia moçambicana. Frango à Zambeziana, Matapa com Caranguejo, Mucapata e muito mais. Serviço de luxo.',
+    price: 1200,
+    priceUnit: 'pessoa',
+    location: 'Maputo Cidade',
     rating: 4.9,
     reviews: 210,
+    images: [
+      'https://images.unsplash.com/photo-1555244162-803834f70033?q=80&w=1200&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?q=80&w=1200&auto=format&fit=crop'
+    ],
+    features: ['Louça de Porcelana', 'Garçons Uniformizados', 'Bebidas Soft Incluídas', 'Sobremesas Típicas'],
+    unavailableDates: [getFutureDate(10)],
+    status: 'approved',
+    businessHours: { type: '24h' }
+  },
+  {
+    id: 's_cake_01',
+    providerId: 'p_cake_01',
+    name: 'Cake Design by Helena',
+    category: 'Catering',
+    subcategory: 'Bolos de Casamento',
+    description: 'Bolos artísticos que são verdadeiras obras de arte. Pastas de açúcar, flores naturais e sabores gourmet (Red Velvet, Chocolate Belga).',
+    price: 8000,
+    priceUnit: 'unidade',
+    location: 'Sommerschield',
+    rating: 5.0,
+    reviews: 95,
     images: [
       'https://images.unsplash.com/photo-1535254973040-607b474cb50d?q=80&w=1200&auto=format&fit=crop',
       'https://images.unsplash.com/photo-1562772386-b7234c919f8e?q=80&w=1200&auto=format&fit=crop'
     ],
-    features: ['Degustação gratuita', 'Design personalizado', 'Entregas ao domicílio', 'Opções sem glúten'],
-    unavailableDates: [getFutureDate(7)],
-    status: 'approved'
-  },
-  {
-    id: 's6',
-    providerId: 'p6',
-    name: 'MC Gerson Alarico',
-    category: 'Musica',
-    subcategory: 'MCs / Apresentadores',
-    description: 'Mestre de Cerimónias profissional com experiência em TV e Rádio. Trago elegância e animação na medida certa para o seu evento.',
-    price: 10000,
-    priceUnit: 'evento',
-    location: 'Maputo',
-    rating: 5.0,
-    reviews: 34,
-    images: [
-      'https://images.unsplash.com/photo-1478147427282-58a87a120781?q=80&w=1200&auto=format&fit=crop'
-    ],
-    features: ['Roteiro personalizado', 'Bilingue (PT/EN)', 'Interação com convidados', 'Gestão de tempo'],
+    features: ['Degustação Prévia', 'Entrega Segura', 'Design Personalizado', 'Noivinhos de Topo'],
     unavailableDates: [],
     status: 'approved'
   },
+
+  // FOTO & VIDEO
   {
-    id: 's7',
-    providerId: 'p7',
-    name: 'LuxCars Mozambique',
+    id: 's_photo_01',
+    providerId: 'p_photo_01',
+    name: 'Pixel Moz Studios',
+    category: 'FotoVideo',
+    subcategory: 'Fotografia de Casamento',
+    description: 'Equipa de 3 fotógrafos para capturar cada ângulo do seu dia. Estilo documental e editorial.',
+    price: 45000,
+    priceUnit: 'evento',
+    location: 'Maputo Cidade',
+    rating: 4.8,
+    reviews: 67,
+    images: [
+      'https://images.unsplash.com/photo-1537633552985-df8429e8048b?q=80&w=1200&auto=format&fit=crop'
+    ],
+    features: ['Álbum Impresso 40x30', 'Drone 4K', 'Entrega em Pen Drive Cristal', 'Sessão Pré-Wedding'],
+    unavailableDates: [getFutureDate(3)],
+    status: 'approved'
+  },
+
+  // DECOR
+  {
+    id: 's_decor_01',
+    providerId: 'p_decor_01',
+    name: 'Elegância Decor',
+    category: 'Decoracao',
+    subcategory: 'Decoradores Completos',
+    description: 'Transformamos qualquer espaço num sonho. Especialistas em casamentos clássicos e modernos. Flores importadas.',
+    price: 80000,
+    priceUnit: 'evento',
+    location: 'Polana Cimento',
+    rating: 4.7,
+    reviews: 112,
+    images: [
+      'https://images.unsplash.com/photo-1519225421980-715cb0202128?q=80&w=1200&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1478146896981-b80fe4634430?q=80&w=1200&auto=format&fit=crop'
+    ],
+    features: ['Flores Naturais', 'Cadeiras Tiffany/Dior', 'Centros de Mesa', 'Iluminação Cénica'],
+    unavailableDates: [],
+    status: 'approved'
+  },
+
+  // CARS
+  {
+    id: 's_car_01',
+    providerId: 'p_car_01',
+    name: 'LuxCars Wedding Fleet',
     category: 'Transporte',
-    subcategory: 'Carros de noiva',
-    description: 'Aluguer de viaturas de luxo para noivos. Chegue ao seu casamento com estilo e conforto.',
-    price: 8000,
+    subcategory: 'Carros de Noiva (Luxo)',
+    description: 'Chegue como uma rainha. Rolls Royce Phantom, Mercedes Classe S e Limousines.',
+    price: 15000,
     priceUnit: 'dia',
-    location: 'Matola',
-    rating: 4.6,
-    reviews: 15,
+    location: 'Maputo Cidade',
+    rating: 4.9,
+    reviews: 24,
     images: [
       'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?q=80&w=1200&auto=format&fit=crop'
     ],
-    features: ['Motorista incluído', 'Decoração do carro', 'Champanhe a bordo', 'Pontualidade garantida'],
-    unavailableDates: [getFutureDate(1)],
-    status: 'approved'
-  },
-  {
-    id: 's8',
-    providerId: 'p1',
-    name: 'Aluguer de Tendas & Cadeiras',
-    category: 'Equipamentos',
-    subcategory: 'Tendas / coberturas',
-    description: 'Tudo o que precisa para montar o seu evento. Tendas, cadeiras Tiffany, mesas e toalhas.',
-    price: 5000,
-    priceUnit: 'evento',
-    location: 'Maputo',
-    rating: 4.5,
-    reviews: 8,
-    images: [
-      'https://images.unsplash.com/photo-1530103862676-de3c9da59af7?q=80&w=1200&auto=format&fit=crop'
-    ],
-    features: ['Montagem e Desmontagem', 'Transporte incluído', 'Material limpo e novo'],
+    features: ['Motorista Fardado', 'Combustível Incluído', 'Decoração do Carro', 'Champanhe a Bordo'],
     unavailableDates: [],
     status: 'approved'
   },
+
+  // BEAUTY
   {
-    id: 's9',
-    providerId: 'p8',
-    name: 'Bela Noiva',
+    id: 's_beauty_01',
+    providerId: 'p_beauty_01',
+    name: 'Studio Glamour by Jessica',
     category: 'VestuarioBeleza',
-    subcategory: 'Maquilhadores',
-    description: 'Maquilhagem profissional para noivas e madrinhas. Realçamos a sua beleza natural.',
-    price: 2500,
+    subcategory: 'Maquilhadores (MUA)',
+    description: 'Maquilhagem profissional HD para noivas, resistente a lágrimas e calor. Produtos MAC e Huda Beauty.',
+    price: 3500,
     priceUnit: 'pessoa',
-    location: 'Maputo',
+    location: 'Polana Cimento',
     rating: 4.8,
-    reviews: 45,
+    reviews: 150,
     images: [
       'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?q=80&w=1200&auto=format&fit=crop'
     ],
-    features: ['Prova incluída', 'Produtos premium', 'Deslocação ao local'],
-    unavailableDates: [getFutureDate(2), getFutureDate(3)],
-    status: 'approved'
-  },
-  {
-    id: 's10',
-    providerId: 'p9',
-    name: 'Grupo Cultural Timbila',
-    category: 'Entretenimento',
-    subcategory: 'Performers culturais',
-    description: 'Traga a tradição moçambicana para o seu evento com música e dança Chopi.',
-    price: 12000,
-    priceUnit: 'evento',
-    location: 'Inhambane',
-    rating: 4.9,
-    reviews: 20,
-    images: [
-       'https://images.unsplash.com/photo-1514525253440-b393452e3383?q=80&w=1200&auto=format&fit=crop'
-    ],
-    features: ['10 Artistas', 'Instrumentos tradicionais', 'Show de 1 hora'],
+    features: ['Teste de Maquilhagem', 'Pestanas Postiças', 'Deslocação ao Hotel', 'Kit Retoque'],
     unavailableDates: [],
-    status: 'pending' // One pending for demo
+    status: 'approved',
+    businessHours: { type: 'custom', start: '06:00', end: '18:00' }
   }
 ];
 
+// --- USERS ---
 export const MOCK_USER: User = {
   id: 'u1',
   name: 'Joana Macamo',
@@ -292,13 +309,13 @@ export const MOCK_USER: User = {
   phone: '84 123 4567',
   whatsapp: '84 123 4567',
   status: 'active',
-  joinedDate: '2025-01-15'
+  joinedDate: new Date().toISOString().split('T')[0] // Joined today
 };
 
 export const MOCK_PROVIDER_USER: User = {
-  id: 'p1',
-  name: 'Maninho Vibes',
-  email: 'maninho@dj.co.mz',
+  id: 'p_music_01',
+  name: 'DJ Supaman',
+  email: 'supaman@dj.co.mz',
   role: 'provider',
   avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=200&auto=format&fit=crop',
   location: 'Maputo',
@@ -306,7 +323,9 @@ export const MOCK_PROVIDER_USER: User = {
   whatsapp: '84 999 8888',
   bio: 'DJ profissional com mais de 10 anos de experiência em casamentos e eventos corporativos. Especialista em criar a atmosfera perfeita.',
   status: 'active',
-  joinedDate: '2024-11-20'
+  joinedDate: '2024-11-20',
+  businessHours: { type: 'custom', start: '18:00', end: '04:00' },
+  portfolio: []
 };
 
 export const MOCK_ADMIN: User = {
@@ -319,64 +338,18 @@ export const MOCK_ADMIN: User = {
   status: 'active'
 };
 
-export const MOCK_EVENTS: EventItem[] = [
-  {
-    id: 'e1',
-    organizerId: 'u1',
-    name: 'Casamento da Joana & Pedro',
-    date: '2025-11-15T14:00:00.000Z',
-    type: 'Casamento',
-    location: 'Maputo',
-    guests: 150,
-    budget: 500000,
-    status: 'planning',
-    services: ['s1'],
-    tasks: [
-      { id: 't1', title: 'Reservar salão', completed: false },
-      { id: 't2', title: 'Escolher vestido', completed: true },
-      { id: 't3', title: 'Degustação do menu', completed: false }
-    ]
-  }
-];
+// --- EVENTS & BOOKINGS (ZEROED OUT FOR FRESH START) ---
+export const MOCK_EVENTS: EventItem[] = [];
 
-export const MOCK_BOOKINGS: Booking[] = [
-  {
-    id: 'b1',
-    eventId: 'e1',
-    serviceId: 's1',
-    status: 'confirmed',
-    date: '2025-11-15T14:00:00.000Z',
-    amount: 15000
-  },
-  {
-    id: 'b2',
-    eventId: 'e2',
-    serviceId: 's1',
-    status: 'pending',
-    date: '2025-12-20T18:00:00.000Z',
-    amount: 15000
-  },
-  {
-    id: 'b3',
-    eventId: 'e3',
-    serviceId: 's8',
-    status: 'completed',
-    date: '2025-01-10T10:00:00.000Z',
-    amount: 5000
-  }
-];
+export const MOCK_BOOKINGS: Booking[] = [];
 
+// --- SYSTEM STATS (ZEROED OUT) ---
 export const MOCK_SYSTEM_STATS: SystemStats = {
-  totalUsers: 1250,
-  totalProviders: 320,
-  totalEvents: 450,
-  totalRevenue: 2500000,
-  activeBookings: 85,
-  growthRate: 15.5,
-  recentActivity: [
-    { id: 'a1', user: 'Joana Macamo', action: 'Criou um novo evento: Casamento', time: '10 min atrás', type: 'info' },
-    { id: 'a2', user: 'DJ Maninho', action: 'Recebeu uma nova reserva', time: '1 hora atrás', type: 'success' },
-    { id: 'a3', user: 'Sabores Catering', action: 'Atualizou o preçário', time: '3 horas atrás', type: 'info' },
-    { id: 'a4', user: 'Novo Utilizador', action: 'Tentativa de login falhada', time: '5 horas atrás', type: 'warning' }
-  ]
+  totalUsers: 2, // Admin + Default User
+  totalProviders: 1, // Default Provider
+  totalEvents: 0,
+  totalRevenue: 0,
+  activeBookings: 0,
+  growthRate: 0,
+  recentActivity: []
 };

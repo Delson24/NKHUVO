@@ -1,5 +1,27 @@
 
+
 export type UserRole = 'organizer' | 'provider' | 'admin';
+
+export interface BusinessHours {
+  type: '24h' | 'custom';
+  start?: string; // "09:00"
+  end?: string;   // "17:00"
+}
+
+export interface PortfolioItem {
+  id: string;
+  title: string;
+  description: string;
+  image: string;
+  date: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  text: string;
+  sender: 'user' | 'provider';
+  timestamp: Date;
+}
 
 export interface User {
   id: string;
@@ -13,6 +35,8 @@ export interface User {
   bio?: string;
   status?: 'active' | 'suspended' | 'pending'; // For admin control
   joinedDate?: string;
+  businessHours?: BusinessHours;
+  portfolio?: PortfolioItem[];
 }
 
 export type ServiceCategory = 
@@ -49,8 +73,9 @@ export interface Service {
   reviews: number;
   images: string[];
   features: string[];
-  unavailableDates: string[]; // ISO Date strings YYYY-MM-DD
+  unavailableDates: string[]; // ISO Date strings YYYY-MM-DD (Blocked full days)
   status?: 'approved' | 'pending' | 'rejected'; // For admin moderation
+  businessHours?: BusinessHours; // Snapshot of provider availability
 }
 
 export interface EventItem {
@@ -78,8 +103,10 @@ export interface Booking {
   eventId: string;
   serviceId: string;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
-  date: string;
+  date: string; // ISO string with START TIME
+  endDate?: string; // ISO string with END TIME
   amount: number;
+  location?: string; // Location specified by organizer
 }
 
 export interface SystemStats {

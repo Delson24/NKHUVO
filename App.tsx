@@ -9,12 +9,12 @@ import { AdminDashboard } from './pages/AdminDashboard';
 import { Explore } from './pages/Explore';
 import { Auth } from './pages/Auth';
 import { CreateEvent } from './pages/CreateEvent';
-import { MOCK_SERVICES, MOCK_BOOKINGS, APP_LOGO } from './services/mockData';
-import { User, Service, Booking } from './types';
+import { MOCK_SERVICES, MOCK_BOOKINGS, APP_LOGO, MOCK_EVENTS, MOCK_USER, MOCK_PROVIDER_USER, MOCK_ADMIN } from './services/mockData';
+import { User, Service, Booking, EventItem, ChatMessage } from './types';
 import { Button } from './components/UI';
 import { ChatModal } from './components/ChatModal';
 import { AvailabilityCalendar } from './components/AvailabilityCalendar';
-import { ArrowLeft, MessageCircle, Calendar, Camera } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Calendar, Camera, MapPin, Clock } from 'lucide-react';
 
 // Simplified Router
 type Route = { path: string; params?: any };
@@ -29,13 +29,19 @@ function App() {
   // GLOBAL STATE (Simulating Backend)
   const [services, setServices] = useState<Service[]>(MOCK_SERVICES);
   const [bookings, setBookings] = useState<Booking[]>(MOCK_BOOKINGS);
+  const [events, setEvents] = useState<EventItem[]>(MOCK_EVENTS);
+  const [allUsers, setAllUsers] = useState<User[]>([MOCK_USER, MOCK_PROVIDER_USER, MOCK_ADMIN]);
 
   // Chat State
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [activeServiceChat, setActiveServiceChat] = useState<{serviceName: string, providerId: string} | null>(null);
+  // Store chat history by providerId (simple keying for demo)
+  const [chatHistory, setChatHistory] = useState<Record<string, ChatMessage[]>>({});
 
   // Booking State
-  const [bookingSelection, setBookingSelection] = useState<{date: Date, time: string} | null>(null);
+  // Updated to include Start and End time
+  const [bookingSelection, setBookingSelection] = useState<{date: Date, startTime: string, endTime: string} | null>(null);
+  const [bookingLocation, setBookingLocation] = useState('');
 
   // Simulate Initial Loading
   useEffect(() => {
@@ -49,6 +55,7 @@ function App() {
     window.scrollTo(0, 0);
     setRoute({ path, params });
     setBookingSelection(null); // Reset booking on nav
+    setBookingLocation('');
   };
 
   const handleLogin = (loggedInUser: User) => {
@@ -58,12 +65,27 @@ function App() {
     } else if (loggedInUser.role === 'organizer') {
       navigate('/dashboard');
     } else {
+      // Logic moved to Auth.tsx for registration redirection, but login lands here
       navigate('/provider-dashboard');
     }
   };
 
+  const handleRegister = (newUser: User) => {
+      setAllUsers(prev => [...prev, newUser]);
+      handleLogin(newUser);
+  };
+
   const handleCreateService = (newService: Service) => {
     setServices(prev => [newService, ...prev]);
+  };
+
+  const handleCreateEvent = (newEvent: EventItem) => {
+      // Update the user ID if the current user is logged in
+      if (user) {
+          newEvent.organizerId = user.id;
+      }
+      setEvents(prev => [newEvent, ...prev]);
+      navigate('/dashboard');
   };
 
   const handleCreateBooking = (serviceId: string, price: number, date: Date) => {
@@ -71,16 +93,35 @@ function App() {
         navigate('/login');
         return;
      }
+     if (!bookingLocation) {
+        alert("Por favor, indique a localização do evento.");
+        return;
+     }
+     
+     // Construct correct ISO string including Start Time
+     const startTime = bookingSelection?.startTime || "10:00";
+     const [startH, startM] = startTime.split(':').map(Number);
+     const bookingDate = new Date(date);
+     bookingDate.setHours(startH, startM, 0, 0);
+
+     // Construct End Time ISO
+     const endTime = bookingSelection?.endTime || "11:00";
+     const [endH, endM] = endTime.split(':').map(Number);
+     const endDate = new Date(date);
+     endDate.setHours(endH, endM, 0, 0);
+
      const newBooking: Booking = {
         id: `b-${Date.now()}`,
         eventId: 'temp-event',
         serviceId: serviceId,
         status: 'pending',
-        date: date.toISOString(),
-        amount: price
+        date: bookingDate.toISOString(), // Start Time
+        endDate: endDate.toISOString(),   // End Time
+        amount: price,
+        location: bookingLocation
      };
      setBookings(prev => [newBooking, ...prev]);
-     alert('Reserva enviada com sucesso! O fornecedor confirmará em breve.');
+     alert('Reserva enviada com sucesso! O fornecedor confirmará o intervalo de tempo.');
      navigate('/dashboard');
   };
 
@@ -91,6 +132,51 @@ function App() {
     }
     setActiveServiceChat({ serviceName, providerId });
     setIsChatOpen(true);
+    
+    // Initialize chat if empty
+    if (!chatHistory[providerId]) {
+        setChatHistory(prev => ({
+            ...prev,
+            [providerId]: [{
+                id: 'init',
+                text: `Olá! Obrigado pelo interesse em "${serviceName}". Como posso ajudar com o seu evento?`,
+                sender: 'provider',
+                timestamp: new Date()
+            }]
+        }));
+    }
+  };
+
+  const handleSendMessage = (text: string) => {
+      if (!activeServiceChat) return;
+      const providerId = activeServiceChat.providerId;
+
+      const userMsg: ChatMessage = {
+          id: Date.now().toString(),
+          text,
+          sender: 'user',
+          timestamp: new Date()
+      };
+
+      // Update state
+      setChatHistory(prev => ({
+          ...prev,
+          [providerId]: [...(prev[providerId] || []), userMsg]
+      }));
+
+      // Auto reply simulation
+      setTimeout(() => {
+         const replyMsg: ChatMessage = {
+             id: (Date.now() + 1).toString(),
+             text: 'Recebemos a sua mensagem! Responderei em breve.',
+             sender: 'provider',
+             timestamp: new Date()
+         };
+         setChatHistory(prev => ({
+            ...prev,
+            [providerId]: [...(prev[providerId] || []), replyMsg]
+        }));
+      }, 1500);
   };
 
   // Splash Screen Render
@@ -134,11 +220,11 @@ function App() {
   const renderContent = () => {
     switch (route.path) {
       case '/':
-        return <Home onNavigate={navigate} />;
+        return <Home onNavigate={navigate} services={services} />;
       
       case '/dashboard':
         if (!user || user.role !== 'organizer') { navigate('/login'); return null; }
-        return <OrganizerDashboard user={user} onNavigate={navigate} />;
+        return <OrganizerDashboard user={user} onNavigate={navigate} events={events} />;
 
       case '/provider-dashboard':
         if (!user || user.role !== 'provider') { navigate('/login'); return null; }
@@ -146,21 +232,31 @@ function App() {
 
       case '/provider-profile':
         if (!user || user.role !== 'provider') { navigate('/login'); return null; }
-        return <ProviderProfile user={user} onNavigate={navigate} services={services} onAddService={handleCreateService} />;
+        return <ProviderProfile user={user} onNavigate={navigate} services={services} onAddService={handleCreateService} isNewProvider={route.params?.new} />;
       
       case '/admin':
         if (!user || user.role !== 'admin') { navigate('/login'); return null; }
-        return <AdminDashboard user={user} onNavigate={navigate} />;
+        return (
+            <AdminDashboard 
+                user={user} 
+                onNavigate={navigate} 
+                users={allUsers}
+                bookings={bookings}
+                events={events}
+                services={services}
+            />
+        );
       
       case '/login':
         return <Auth mode="login" onLogin={handleLogin} onNavigate={navigate} />;
         
       case '/register':
-        return <Auth mode="register" onLogin={handleLogin} onNavigate={navigate} />;
+        // Wrap handleLogin to also add to allUsers
+        return <Auth mode="register" onLogin={(u) => { handleRegister(u); }} onNavigate={navigate} />;
 
       case '/create-event':
          if (!user) { navigate('/login'); return null; }
-         return <CreateEvent onNavigate={navigate} onFinish={() => navigate('/dashboard')} />;
+         return <CreateEvent onNavigate={navigate} onFinish={handleCreateEvent} />;
 
       case '/explore':
         return <Explore onNavigate={navigate} initialSearch={route.params?.search} initialLocation={route.params?.location} services={services} />;
@@ -169,6 +265,9 @@ function App() {
         const sId = route.params?.id;
         const service = services.find(s => s.id === sId);
         if (!service) return <div>Serviço não encontrado</div>;
+        
+        // Find bookings for this service (Pass full booking objects to Calendar for interval checking)
+        const serviceBookings = bookings.filter(b => b.serviceId === service.id && b.status === 'confirmed');
 
         return (
           <div className="min-h-screen pt-24 pb-12 px-4 bg-white">
@@ -230,7 +329,9 @@ function App() {
                         <div className="p-6">
                             <AvailabilityCalendar 
                               unavailableDates={service.unavailableDates || []}
-                              onSelect={(date, time) => setBookingSelection({date, time})}
+                              bookedSlots={serviceBookings} 
+                              onSelect={(date, startTime, endTime) => setBookingSelection({date, startTime, endTime})}
+                              businessHours={service.businessHours} 
                             />
                         </div>
                         
@@ -245,14 +346,35 @@ function App() {
                                 </div>
                                 {bookingSelection && (
                                    <div className="hidden sm:block text-right">
-                                       <div className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Data</div>
+                                       <div className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Intervalo Selecionado</div>
                                        <div className="text-sm text-emerald-600 font-bold flex items-center justify-end">
                                           <Calendar size={14} className="mr-1" />
-                                          {bookingSelection.date.getDate()}/{bookingSelection.date.getMonth()+1} às {bookingSelection.time}
+                                          {bookingSelection.date.getDate()}/{bookingSelection.date.getMonth()+1}
+                                       </div>
+                                       <div className="text-sm text-slate-600 font-bold flex items-center justify-end mt-0.5">
+                                          <Clock size={14} className="mr-1 text-slate-400" />
+                                          {bookingSelection.startTime} - {bookingSelection.endTime}
                                        </div>
                                    </div>
                                 )}
                             </div>
+
+                            {/* Booking Location Input */}
+                            {bookingSelection && (
+                                <div className="animate-fade-in-up">
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Localização do Evento</label>
+                                    <div className="relative">
+                                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                                        <input 
+                                            type="text" 
+                                            placeholder="Ex: Salão de Festas Matola"
+                                            className="w-full pl-9 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500 shadow-sm"
+                                            value={bookingLocation}
+                                            onChange={(e) => setBookingLocation(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+                            )}
                             
                             {/* Buttons Grid */}
                             <div className="grid grid-cols-2 gap-3">
@@ -281,12 +403,15 @@ function App() {
 
                                 <div className="col-span-2">
                                     <Button 
-                                        className={`w-full justify-center py-4 text-lg transition-all shadow-lg ${bookingSelection ? 'bg-indigo-600 shadow-indigo-200' : 'bg-slate-300 cursor-not-allowed hover:bg-slate-300 shadow-none'}`}
-                                        onClick={() => bookingSelection ? handleCreateBooking(service.id, service.price, bookingSelection.date) : null}
-                                        disabled={!bookingSelection}
+                                        className={`w-full justify-center py-4 text-lg transition-all shadow-lg ${bookingSelection && bookingLocation ? 'bg-indigo-600 shadow-indigo-200' : 'bg-slate-300 cursor-not-allowed hover:bg-slate-300 shadow-none'}`}
+                                        onClick={() => (bookingSelection && bookingLocation) ? handleCreateBooking(service.id, service.price, bookingSelection.date) : null}
+                                        disabled={!bookingSelection || !bookingLocation}
                                     >
-                                        {bookingSelection ? 'Confirmar Reserva' : 'Selecione uma Data acima'}
+                                        {bookingSelection ? 'Confirmar Pedido' : 'Selecione uma Data e Horário'}
                                     </Button>
+                                    {bookingSelection && !bookingLocation && (
+                                        <p className="text-xs text-center text-red-500 mt-2">Por favor insira a localização.</p>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -302,20 +427,29 @@ function App() {
                 onClose={() => setIsChatOpen(false)}
                 serviceName={activeServiceChat.serviceName}
                 providerName="Fornecedor Profissional"
+                messages={chatHistory[activeServiceChat.providerId] || []}
+                onSendMessage={handleSendMessage}
               />
             )}
           </div>
         );
         
       default:
-        return <Home onNavigate={navigate} />;
+        return <Home onNavigate={navigate} services={services} />;
     }
   };
 
   if (user?.role === 'admin' && route.path === '/admin') {
     return (
       <div className="font-sans text-slate-900 antialiased selection:bg-indigo-100 selection:text-indigo-800">
-        <AdminDashboard user={user} onNavigate={navigate} />
+         <AdminDashboard 
+            user={user} 
+            onNavigate={navigate} 
+            users={allUsers}
+            bookings={bookings}
+            events={events}
+            services={services}
+         />
       </div>
     );
   }

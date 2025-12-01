@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { User, Booking, Service } from '../types';
-import { LayoutDashboard, Calendar, DollarSign, Edit2, TrendingUp, Plus, User as UserIcon } from 'lucide-react';
+import { LayoutDashboard, Calendar, DollarSign, Edit2, TrendingUp, Plus, User as UserIcon, Check, X, MapPin } from 'lucide-react';
 import { Button } from '../components/UI';
 
 interface Props {
@@ -13,14 +13,20 @@ interface Props {
 
 export const ProviderDashboard: React.FC<Props> = ({ user, onNavigate, services, bookings }) => {
   const [activeTab, setActiveTab] = useState('overview');
-  
-  // Filter data for this provider using passed props
+  const [localBookings, setLocalBookings] = useState(bookings); // Use local state to simulate approve/reject updates
+
+  // Filter data for this provider using passed props (and updated local state)
   const myServices = services.filter(s => s.providerId === user.id);
-  const myBookings = bookings.filter(b => myServices.some(s => s.id === b.serviceId));
+  const myBookings = localBookings.filter(b => myServices.some(s => s.id === b.serviceId));
 
   const totalEarnings = myBookings
     .filter(b => b.status === 'confirmed' || b.status === 'completed')
     .reduce((acc, curr) => acc + curr.amount, 0);
+
+  const handleBookingAction = (id: string, action: 'confirmed' | 'cancelled') => {
+    setLocalBookings(prev => prev.map(b => b.id === id ? { ...b, status: action } : b));
+    alert(`Reserva ${action === 'confirmed' ? 'Aprovada' : 'Rejeitada'} com sucesso!`);
+  };
 
   const StatCard = ({ title, value, icon: Icon, color }: any) => (
     <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-start justify-between">
@@ -72,32 +78,69 @@ export const ProviderDashboard: React.FC<Props> = ({ user, onNavigate, services,
                 <table className="w-full text-left">
                   <thead className="bg-slate-50 text-slate-500 text-xs uppercase">
                     <tr>
-                      <th className="px-6 py-4">Data</th>
-                      <th className="px-6 py-4">Serviço</th>
+                      <th className="px-6 py-4">Data/Hora</th>
+                      <th className="px-6 py-4">Detalhes</th>
+                      <th className="px-6 py-4">Local</th>
                       <th className="px-6 py-4">Status</th>
-                      <th className="px-6 py-4">Valor</th>
+                      <th className="px-6 py-4 text-right">Ações</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {myBookings.length > 0 ? myBookings.map(booking => (
                       <tr key={booking.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-6 py-4 text-sm text-slate-600">
-                          {new Date(booking.date).toLocaleDateString()}
+                        <td className="px-6 py-4">
+                          <div className="text-sm font-bold text-slate-800">
+                             {new Date(booking.date).toLocaleDateString()}
+                          </div>
+                          <div className="text-xs text-slate-400">
+                             {new Date(booking.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
                         </td>
-                        <td className="px-6 py-4 text-sm font-medium text-slate-900">
-                          {myServices.find(s => s.id === booking.serviceId)?.name || 'Serviço'}
+                        <td className="px-6 py-4">
+                           <div className="text-sm font-medium text-slate-900">
+                             {myServices.find(s => s.id === booking.serviceId)?.name || 'Serviço'}
+                           </div>
+                           <div className="text-xs text-slate-500 font-bold">
+                             {booking.amount.toLocaleString()} MZN
+                           </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-600">
+                           <div className="flex items-center gap-1">
+                              <MapPin size={12} className="text-slate-400" />
+                              <span className="truncate max-w-[100px]" title={booking.location}>{booking.location || 'N/A'}</span>
+                           </div>
                         </td>
                         <td className="px-6 py-4">
                           <span className={`inline-flex px-2 py-1 rounded-full text-xs font-bold uppercase ${
                             booking.status === 'confirmed' ? 'bg-green-100 text-green-700' :
                             booking.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                            booking.status === 'cancelled' ? 'bg-red-100 text-red-700' :
                             'bg-slate-100 text-slate-600'
                           }`}>
                             {booking.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-sm font-bold text-slate-700">
-                          {booking.amount.toLocaleString()} MZN
+                        <td className="px-6 py-4 text-right">
+                          {booking.status === 'pending' ? (
+                            <div className="flex justify-end gap-2">
+                               <button 
+                                 onClick={() => handleBookingAction(booking.id, 'confirmed')}
+                                 className="p-1.5 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors border border-green-200"
+                                 title="Aprovar"
+                               >
+                                  <Check size={16} />
+                               </button>
+                               <button 
+                                 onClick={() => handleBookingAction(booking.id, 'cancelled')}
+                                 className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors border border-red-200"
+                                 title="Rejeitar"
+                               >
+                                  <X size={16} />
+                               </button>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-slate-400 font-medium">Finalizado</span>
+                          )}
                         </td>
                       </tr>
                     )) : (

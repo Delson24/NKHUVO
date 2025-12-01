@@ -1,10 +1,15 @@
-
 import React, { useState } from 'react';
 import { Search, MapPin, ArrowRight, Sparkles, TrendingUp, ShieldCheck, Heart } from 'lucide-react';
-import { CATEGORIES, MOCK_SERVICES, LOCATIONS } from '../services/mockData';
+import { CATEGORIES, LOCATIONS } from '../services/mockData';
 import { ServiceCard, Button } from '../components/UI';
+import { Service } from '../types';
 
-export const Home: React.FC<{ onNavigate: (path: string, params?: any) => void }> = ({ onNavigate }) => {
+interface HomeProps {
+  onNavigate: (path: string, params?: any) => void;
+  services: Service[];
+}
+
+export const Home: React.FC<HomeProps> = ({ onNavigate, services }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [location, setLocation] = useState('');
 
@@ -145,7 +150,8 @@ export const Home: React.FC<{ onNavigate: (path: string, params?: any) => void }
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {MOCK_SERVICES.slice(0, 4).map(service => (
+            {/* Displaying real services passed via props */}
+            {services.slice(0, 4).map(service => (
               <ServiceCard 
                 key={service.id} 
                 service={service} 

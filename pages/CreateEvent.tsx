@@ -1,12 +1,12 @@
-
 import React, { useState } from 'react';
 import { Calendar, Users, MapPin, DollarSign, PartyPopper, ChevronRight, ChevronLeft, Check } from 'lucide-react';
 import { LOCATIONS, CATEGORIES } from '../services/mockData';
 import { Button } from '../components/UI';
+import { EventItem } from '../types';
 
 interface CreateEventProps {
   onNavigate: (path: string) => void;
-  onFinish: () => void;
+  onFinish: (event: EventItem) => void;
 }
 
 export const CreateEvent: React.FC<CreateEventProps> = ({ onNavigate, onFinish }) => {
@@ -31,6 +31,29 @@ export const CreateEvent: React.FC<CreateEventProps> = ({ onNavigate, onFinish }
         ? prev.services.filter(s => s !== id)
         : [...prev.services, id]
     }));
+  };
+
+  const handleCreate = () => {
+      // Construct the real event object
+      const newEvent: EventItem = {
+          id: `e-${Date.now()}`,
+          organizerId: 'u1', // Defaulting to mock user for now as auth is simulated
+          name: formData.name,
+          date: formData.date ? new Date(formData.date).toISOString() : new Date().toISOString(),
+          type: formData.type,
+          location: formData.location,
+          guests: formData.guests,
+          budget: formData.budget,
+          status: 'planning',
+          services: formData.services,
+          tasks: [
+              { id: 't1', title: 'Definir lista de convidados', completed: false },
+              { id: 't2', title: 'Enviar convites', completed: false },
+              { id: 't3', title: 'Confirmar fornecedores', completed: false }
+          ]
+      };
+      
+      onFinish(newEvent);
   };
 
   const StepIndicator = () => (
@@ -221,7 +244,7 @@ export const CreateEvent: React.FC<CreateEventProps> = ({ onNavigate, onFinish }
                 Continuar <ChevronRight size={18} className="ml-2" />
               </Button>
             ) : (
-              <Button onClick={onFinish} className="bg-green-600 hover:bg-green-700">
+              <Button onClick={handleCreate} className="bg-green-600 hover:bg-green-700">
                 Criar Evento
               </Button>
             )}

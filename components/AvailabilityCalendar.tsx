@@ -1,22 +1,106 @@
 
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Clock, AlertCircle, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, AlertCircle, Calendar as CalendarIcon, ArrowRight } from 'lucide-react';
+import { BusinessHours, Booking } from '../types';
 
 interface Props {
-  unavailableDates: string[]; // ISO 'YYYY-MM-DD'
-  onSelect: (date: Date, time: string) => void;
+  unavailableDates: string[]; // ISO 'YYYY-MM-DD' (Full blocked days)
+  bookedSlots?: Booking[]; // Array of bookings to check overlap
+  onSelect: (date: Date, startTime: string, endTime: string) => void;
+  businessHours?: BusinessHours;
 }
 
 const DAYS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
-export const AvailabilityCalendar: React.FC<Props> = ({ unavailableDates, onSelect }) => {
+export const AvailabilityCalendar: React.FC<Props> = ({ unavailableDates, bookedSlots = [], onSelect, businessHours }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedTime, setSelectedTime] = useState<string>('');
-  
-  // Time slots (could be dynamic)
-  const timeSlots = ['09:00', '10:00', '13:00', '15:00', '18:00', '20:00'];
+  const [selectedStartTime, setSelectedStartTime] = useState<string>('');
+  const [selectedEndTime, setSelectedEndTime] = useState<string>('');
+  const [timeSlots, setTimeSlots] = useState<string[]>([]);
+  const [availableEndTimes, setAvailableEndTimes] = useState<string[]>([]);
+
+  // 1. Generate Base Time Slots based on Business Hours
+  useEffect(() => {
+    const slots = [];
+    let startHour = 8; // Default 8 AM
+    let endHour = 20; // Default 8 PM
+
+    if (businessHours && businessHours.type === 'custom' && businessHours.start && businessHours.end) {
+        startHour = parseInt(businessHours.start.split(':')[0]);
+        endHour = parseInt(businessHours.end.split(':')[0]);
+    } else if (businessHours && businessHours.type === '24h') {
+        startHour = 0;
+        endHour = 23;
+    }
+
+    for (let i = startHour; i <= endHour; i++) {
+        const hour = i % 24;
+        const time = `${hour.toString().padStart(2, '0')}:00`;
+        slots.push(time);
+        if (i === endHour && endHour !== 23 && businessHours?.type !== '24h') break;
+    }
+    
+    // For 24h, we still show all hours for granular selection in interval mode
+    if (businessHours?.type === '24h') {
+        const allHours = [];
+        for(let j=0; j<24; j++) allHours.push(`${j.toString().padStart(2,'0')}:00`);
+        setTimeSlots(allHours);
+    } else {
+        setTimeSlots(slots);
+    }
+
+  }, [businessHours]);
+
+  // 2. Update Available End Times when Start Time changes
+  useEffect(() => {
+    if (!selectedStartTime || !selectedDate) {
+        setAvailableEndTimes([]);
+        return;
+    }
+
+    const startHour = parseInt(selectedStartTime.split(':')[0]);
+    const potentialEnds = [];
+    let limitHour = 24;
+    
+    // Find business close hour
+    if (businessHours?.type === 'custom' && businessHours.end) {
+        limitHour = parseInt(businessHours.end.split(':')[0]);
+        // Allow ending exactly at close time (e.g. open until 17:00, can book 16:00-17:00)
+    }
+
+    // Check for next booking on the same day to set a ceiling
+    if (selectedDate) {
+        const dateStr = selectedDate.toISOString().split('T')[0];
+        
+        // Find bookings on this day that start AFTER the selected start time
+        const bookingsToday = bookedSlots.filter(b => b.date.startsWith(dateStr));
+        const nextBooking = bookingsToday
+            .map(b => parseInt(b.date.split('T')[1].split(':')[0]))
+            .filter(h => h > startHour)
+            .sort((a,b) => a - b)[0]; // The earliest booking after start
+
+        if (nextBooking) {
+            limitHour = Math.min(limitHour, nextBooking);
+        }
+    }
+
+    // Generate valid end times (at least 1 hour duration)
+    for (let i = startHour + 1; i <= limitHour; i++) {
+         const h = i % 24; // Handle midnight wrap if needed, mostly simplistic here
+         // If wrapped to 0 but start was 23, that's valid.
+         const time = `${h.toString().padStart(2, '0')}:00`;
+         potentialEnds.push(time);
+         // If we hit the limit hour (which might be a booking start or close time), stop.
+         if (i === limitHour) break; 
+    }
+
+    setAvailableEndTimes(potentialEnds);
+    setSelectedEndTime(''); // Reset end time when start changes
+
+  }, [selectedStartTime, selectedDate, businessHours, bookedSlots]);
+
 
   const getDaysInMonth = (date: Date) => {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
@@ -31,7 +115,7 @@ export const AvailabilityCalendar: React.FC<Props> = ({ unavailableDates, onSele
     setCurrentDate(newDate);
   };
 
-  const isUnavailable = (day: number) => {
+  const isDayUnavailable = (day: number) => {
     const checkDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
     const dateString = checkDate.toISOString().split('T')[0];
     
@@ -43,18 +127,46 @@ export const AvailabilityCalendar: React.FC<Props> = ({ unavailableDates, onSele
     return unavailableDates.includes(dateString);
   };
 
-  const handleDateClick = (day: number) => {
-    if (isUnavailable(day)) return;
-    const newSelected = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-    setSelectedDate(newSelected);
-    setSelectedTime(''); // Reset time on date change
+  const isTimeSlotBooked = (time: string) => {
+     if (!selectedDate) return false;
+     
+     const dateStr = selectedDate.toISOString().split('T')[0];
+     const slotHour = parseInt(time.split(':')[0]);
+
+     return bookedSlots.some(booking => {
+        if (!booking.date.startsWith(dateStr)) return false;
+        
+        const startH = parseInt(booking.date.split('T')[1].split(':')[0]);
+        // Default duration 1h if no endDate, otherwise parse endDate
+        let endH = startH + 1; 
+        if (booking.endDate) {
+            endH = parseInt(booking.endDate.split('T')[1].split(':')[0]);
+        }
+
+        // Slot is booked if it falls within [start, end)
+        return slotHour >= startH && slotHour < endH;
+     });
   };
 
-  const handleTimeSelect = (time: string) => {
-    setSelectedTime(time);
-    if (selectedDate) {
-      onSelect(selectedDate, time);
-    }
+  const handleDateClick = (day: number) => {
+    if (isDayUnavailable(day)) return;
+    const newSelected = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    setSelectedDate(newSelected);
+    setSelectedStartTime('');
+    setSelectedEndTime('');
+  };
+
+  const handleStartTimeSelect = (time: string) => {
+    setSelectedStartTime(time);
+    // End time is reset by effect
+  };
+
+  const handleEndTimeSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+     const time = e.target.value;
+     setSelectedEndTime(time);
+     if (selectedDate && selectedStartTime && time) {
+         onSelect(selectedDate, selectedStartTime, time);
+     }
   };
 
   const renderDays = () => {
@@ -62,14 +174,12 @@ export const AvailabilityCalendar: React.FC<Props> = ({ unavailableDates, onSele
     const firstDay = getFirstDayOfMonth(currentDate);
     const days = [];
 
-    // Empty cells for previous month
     for (let i = 0; i < firstDay; i++) {
       days.push(<div key={`empty-${i}`} className="h-10"></div>);
     }
 
-    // Days
     for (let day = 1; day <= daysInMonth; day++) {
-      const unavailable = isUnavailable(day);
+      const unavailable = isDayUnavailable(day);
       const isSelected = selectedDate?.getDate() === day && 
                          selectedDate?.getMonth() === currentDate.getMonth() &&
                          selectedDate?.getFullYear() === currentDate.getFullYear();
@@ -135,30 +245,69 @@ export const AvailabilityCalendar: React.FC<Props> = ({ unavailableDates, onSele
         {renderDays()}
       </div>
 
-      <div className={`transition-all duration-500 overflow-hidden ${selectedDate ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'}`}>
-         <div className="border-t border-slate-100 pt-4">
-            <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center">
-              <Clock size={14} className="mr-2 text-indigo-500" /> 
-              Horários disponíveis para {selectedDate?.getDate()} de {MONTHS[selectedDate?.getMonth() || 0]}
-            </h4>
+      <div className={`transition-all duration-500 overflow-hidden ${selectedDate ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
+         <div className="border-t border-slate-100 pt-4 space-y-4">
             
-            <div className="grid grid-cols-3 gap-2">
-               {timeSlots.map(time => (
-                 <button
-                   key={time}
-                   onClick={() => handleTimeSelect(time)}
-                   className={`
-                      py-2 rounded-xl text-sm font-medium transition-all border
-                      ${selectedTime === time 
-                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' 
-                        : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300 hover:text-indigo-600'
-                      }
-                   `}
-                 >
-                   {time}
-                 </button>
-               ))}
+            {/* Start Time Grid */}
+            <div>
+                <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center">
+                <Clock size={14} className="mr-2 text-indigo-500" /> 
+                Hora de Início
+                </h4>
+                
+                <div className="grid grid-cols-3 gap-2">
+                {timeSlots.map(time => {
+                    const isBooked = isTimeSlotBooked(time);
+                    return (
+                    <button
+                        key={time}
+                        onClick={() => !isBooked && handleStartTimeSelect(time)}
+                        disabled={isBooked}
+                        className={`
+                            py-2 rounded-xl text-sm font-medium transition-all border
+                            ${isBooked 
+                            ? 'bg-slate-100 text-slate-300 border-transparent cursor-not-allowed line-through' 
+                            : selectedStartTime === time 
+                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' 
+                                : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300 hover:text-indigo-600'
+                            }
+                        `}
+                    >
+                        {time}
+                    </button>
+                    );
+                })}
+                </div>
+                {timeSlots.length === 0 && <p className="text-xs text-slate-400 mt-2">Nenhum horário disponível para este dia.</p>}
             </div>
+
+            {/* End Time Selector (Conditioned on Start Time) */}
+            {selectedStartTime && (
+                <div className="animate-fade-in-up bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                    <div className="flex items-center gap-2 mb-2 text-sm font-bold text-slate-800">
+                        <span>Das {selectedStartTime}</span>
+                        <ArrowRight size={14} className="text-slate-400" />
+                        <span>Até...</span>
+                    </div>
+                    
+                    <select 
+                        className="w-full p-3 bg-white border border-slate-300 rounded-xl outline-none focus:border-indigo-500 font-medium text-slate-700 cursor-pointer"
+                        value={selectedEndTime}
+                        onChange={handleEndTimeSelect}
+                    >
+                        <option value="">Selecione hora de fim</option>
+                        {availableEndTimes.map(time => (
+                            <option key={time} value={time}>{time}</option>
+                        ))}
+                    </select>
+                    {availableEndTimes.length === 0 ? (
+                        <p className="text-xs text-red-400 mt-2">Sem horários para prolongar (conflito de agenda).</p>
+                    ) : (
+                        <p className="text-xs text-slate-400 mt-2">Selecione o horário de término do evento.</p>
+                    )}
+                </div>
+            )}
+
          </div>
       </div>
       

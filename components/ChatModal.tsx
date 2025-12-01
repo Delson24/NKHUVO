@@ -1,13 +1,7 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { X, Send, Paperclip, MoreVertical, CheckCheck } from 'lucide-react';
-
-interface Message {
-  id: string;
-  text: string;
-  sender: 'user' | 'provider';
-  timestamp: Date;
-}
+import { ChatMessage } from '../types';
 
 interface ChatModalProps {
   isOpen: boolean;
@@ -15,17 +9,19 @@ interface ChatModalProps {
   serviceName: string;
   providerName: string;
   providerAvatar?: string;
+  messages: ChatMessage[];
+  onSendMessage: (text: string) => void;
 }
 
-export const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose, serviceName, providerName, providerAvatar }) => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: `Olá! Obrigado pelo interesse em "${serviceName}". Como posso ajudar com o seu evento?`,
-      sender: 'provider',
-      timestamp: new Date()
-    }
-  ]);
+export const ChatModal: React.FC<ChatModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  serviceName, 
+  providerName, 
+  providerAvatar,
+  messages,
+  onSendMessage
+}) => {
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -43,26 +39,8 @@ export const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose, serviceNa
     e?.preventDefault();
     if (!newMessage.trim()) return;
 
-    const userMsg: Message = {
-      id: Date.now().toString(),
-      text: newMessage,
-      sender: 'user',
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, userMsg]);
+    onSendMessage(newMessage);
     setNewMessage('');
-
-    // Simulate auto-reply
-    setTimeout(() => {
-      const replyMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        text: 'Obrigado pela mensagem! Responderei o mais breve possível com os detalhes.',
-        sender: 'provider',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, replyMsg]);
-    }, 1500);
   };
 
   if (!isOpen) return null;
@@ -110,7 +88,7 @@ export const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose, serviceNa
         {/* Messages Area */}
         <div className="flex-1 overflow-y-auto p-6 bg-slate-50 space-y-4">
           <div className="text-center text-xs text-slate-400 my-4">
-            <span>Hoje</span>
+            <span>Início da Conversa</span>
           </div>
           
           {messages.map((msg) => (

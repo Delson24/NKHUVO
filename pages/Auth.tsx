@@ -8,7 +8,7 @@ import { Mail, Lock, User as UserIcon, MapPin, ArrowRight, ArrowLeft } from 'luc
 interface AuthProps {
   mode: 'login' | 'register';
   onLogin: (user: User) => void;
-  onNavigate: (path: string) => void;
+  onNavigate: (path: string, params?: any) => void;
 }
 
 export const Auth: React.FC<AuthProps> = ({ mode, onLogin, onNavigate }) => {
@@ -24,7 +24,13 @@ export const Auth: React.FC<AuthProps> = ({ mode, onLogin, onNavigate }) => {
         onLogin(MOCK_ADMIN);
       } else {
         const user = role === 'organizer' ? MOCK_USER : MOCK_PROVIDER_USER;
-        onLogin(user);
+        onLogin(user); // App.tsx handles generic navigation, but we override for register flow below
+        
+        // Custom redirection for registration logic
+        if (mode === 'register' && role === 'provider') {
+            // Pass 'new=true' param to trigger onboarding modal
+            onNavigate('/provider-profile', { new: true }); 
+        }
       }
       setLoading(false);
     }, 1500);
