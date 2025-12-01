@@ -86,6 +86,19 @@ function App() {
       handleLogin(newUser);
   };
 
+  // --- USER UPDATE HANDLER (Profile Edits) ---
+  const handleUpdateUser = (updatedUser: User) => {
+      // 1. Update the logged in user session if it matches
+      if (user && user.id === updatedUser.id) {
+          setUser(updatedUser);
+      }
+      
+      // 2. Update the "Database" of users
+      setAllUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+      
+      showToast('Perfil atualizado com sucesso!');
+  };
+
   const handleCreateService = (newService: Service) => {
     setServices(prev => [newService, ...prev]);
   };
@@ -278,7 +291,16 @@ function App() {
 
       case '/provider-profile':
         if (!user || user.role !== 'provider') { navigate('/login'); return null; }
-        return <ProviderProfile user={user} onNavigate={navigate} services={services} onAddService={handleCreateService} isNewProvider={route.params?.new} />;
+        return (
+            <ProviderProfile 
+                user={user} 
+                onNavigate={navigate} 
+                services={services} 
+                onAddService={handleCreateService} 
+                onUpdateProfile={handleUpdateUser} // Pass the update handler
+                isNewProvider={route.params?.new} 
+            />
+        );
       
       case '/admin':
         if (!user || user.role !== 'admin') { navigate('/login'); return null; }

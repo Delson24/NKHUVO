@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useEffect } from 'react';
 import { User, Service, ServiceCategory, BusinessHours, PortfolioItem } from '../types';
 import { CATEGORIES, LOCATIONS } from '../services/mockData';
@@ -10,10 +12,11 @@ interface Props {
   onNavigate: (path: string) => void;
   services: Service[];
   onAddService: (s: Service) => void;
+  onUpdateProfile: (u: User) => void; // New prop to persist changes
   isNewProvider?: boolean; // Prop to trigger onboarding
 }
 
-export const ProviderProfile: React.FC<Props> = ({ user, onNavigate, services, onAddService, isNewProvider = false }) => {
+export const ProviderProfile: React.FC<Props> = ({ user, onNavigate, services, onAddService, onUpdateProfile, isNewProvider = false }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [profileData, setProfileData] = useState({
@@ -59,12 +62,24 @@ export const ProviderProfile: React.FC<Props> = ({ user, onNavigate, services, o
         ? profileData.customLocation 
         : profileData.location;
 
+    // Construct full User object with updates
+    const updatedUser: User = {
+        ...user,
+        name: profileData.name,
+        avatar: profileData.avatar,
+        location: finalLocation,
+        phone: profileData.phone,
+        whatsapp: profileData.whatsapp,
+        bio: profileData.bio,
+        businessHours: profileData.businessHours,
+        portfolio: portfolio // Ensure portfolio is saved too
+    };
+
     // Simulate API save
     setTimeout(() => {
+      onUpdateProfile(updatedUser); // Update global state
       setIsSaving(false);
       setIsEditing(false);
-      // Ideally update parent state here
-      showToast('Perfil atualizado com sucesso!');
     }, 1000);
   };
 
@@ -87,7 +102,16 @@ export const ProviderProfile: React.FC<Props> = ({ user, onNavigate, services, o
       date: new Date().toISOString().split('T')[0]
     };
 
-    setPortfolio([item, ...portfolio]);
+    const updatedPortfolio = [item, ...portfolio];
+    setPortfolio(updatedPortfolio);
+
+    // Also persist this update immediately to user profile
+    const updatedUser: User = {
+        ...user,
+        portfolio: updatedPortfolio
+    };
+    onUpdateProfile(updatedUser);
+
     setIsAddPortfolioOpen(false);
     setNewPortfolio({ title: '', description: '', image: '' });
     showToast('Trabalho adicionado ao portfólio!');
