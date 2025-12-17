@@ -1,13 +1,8 @@
 
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 
-const apiKey = process.env.API_KEY || '';
-
-// Safe initialization
-let ai: GoogleGenAI | null = null;
-if (apiKey) {
-  ai = new GoogleGenAI({ apiKey });
-}
+// Fix: Always use process.env.API_KEY directly in the constructor for initialization
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export interface AIPlanResponse {
   themeSuggestions: string[];
@@ -26,10 +21,7 @@ export const generateEventPlan = async (
   location: string,
   vibe: string
 ): Promise<AIPlanResponse | null> => {
-  if (!ai) {
-    console.error("Gemini API Key missing");
-    return null;
-  }
+  // Fix: Removed the null check for 'ai' as it is initialized directly with the environment variable
 
   const prompt = `
     Aja como um organizador de eventos experiente em Moçambique (Plataforma NKHUVO).
@@ -54,10 +46,45 @@ export const generateEventPlan = async (
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      // Fix: Use gemini-3-flash-preview for general text tasks as recommended by guidelines
+      model: 'gemini-3-flash-preview',
       contents: prompt,
       config: {
-        responseMimeType: 'application/json'
+        responseMimeType: 'application/json',
+        // Fix: Use responseSchema to define the expected structure for more robust JSON extraction
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            themeSuggestions: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING }
+            },
+            checklist: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING }
+            },
+            estimatedBudgetMZN: {
+              type: Type.OBJECT,
+              properties: {
+                low: { type: Type.NUMBER },
+                high: { type: Type.NUMBER },
+                breakdown: {
+                  type: Type.OBJECT,
+                  properties: {
+                    Catering: { type: Type.NUMBER },
+                    Venue: { type: Type.NUMBER },
+                    Decor: { type: Type.NUMBER },
+                    Music: { type: Type.NUMBER }
+                  },
+                  required: ["Catering", "Venue", "Decor", "Music"]
+                }
+              },
+              required: ["low", "high", "breakdown"]
+            },
+            tips: { type: Type.STRING }
+          },
+          required: ["themeSuggestions", "checklist", "estimatedBudgetMZN", "tips"]
+        }
       }
     });
 

@@ -5,7 +5,12 @@ import { User as UserType } from '../types';
 import { APP_LOGO } from '../services/mockData';
 
 interface LayoutProps {
+<<<<<<< HEAD
   children: React.ReactNode;
+=======
+  // Fix: children is made optional as it's not always required by components using this interface (like Navbar)
+  children?: React.ReactNode;
+>>>>>>> b7456df (Meu primeiro commit)
   user: UserType | null;
   onLogout: () => void;
   onNavigate: (path: string) => void;

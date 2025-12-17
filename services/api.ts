@@ -15,7 +15,7 @@ export const api = {
     // const { data, error } = await supabase.from('services').select('*').eq('status', 'approved');
     // if (error) throw error;
     // return data as Service[];
-    
+
     return new Promise((resolve) => {
       setTimeout(() => resolve(MOCK_SERVICES), SIMULATE_DELAY);
     });
@@ -45,7 +45,7 @@ export const api = {
   getBookings: async (): Promise<Booking[]> => {
     // SUPABASE TODO:
     // const { data } = await supabase.from('bookings').select('*');
-    
+
     return new Promise((resolve) => {
       setTimeout(() => resolve(MOCK_BOOKINGS), SIMULATE_DELAY);
     });
@@ -72,14 +72,14 @@ export const api = {
       setTimeout(() => resolve(MOCK_USER), SIMULATE_DELAY);
     });
   },
-  
+
   // --- EVENTS ---
   getUserEvents: async (userId: string): Promise<EventItem[]> => {
     // SUPABASE TODO:
     // const { data } = await supabase.from('events').select('*').eq('organizer_id', userId);
-    
+
     return new Promise((resolve) => {
-        setTimeout(() => resolve(MOCK_EVENTS.filter(e => e.organizerId === userId)), SIMULATE_DELAY);
+      setTimeout(() => resolve(MOCK_EVENTS.filter(e => e.organizerId === userId)), SIMULATE_DELAY);
     });
   }
 };

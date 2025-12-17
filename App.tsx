@@ -1,6 +1,9 @@
+<<<<<<< HEAD
 
 
 
+=======
+>>>>>>> b7456df (Meu primeiro commit)
 import React, { useState, useEffect } from 'react';
 import { Navbar, Footer } from './components/Layout';
 import { Home } from './pages/Home';
@@ -18,30 +21,50 @@ import { ChatModal } from './components/ChatModal';
 import { AvailabilityCalendar } from './components/AvailabilityCalendar';
 import { ArrowLeft, MessageCircle, Calendar, Camera, MapPin, Clock, Truck } from 'lucide-react';
 
+<<<<<<< HEAD
 // Simplified Router
+=======
+// A camada de API agora aponta para MySQL (simulado via mock por enquanto)
+import { api } from './services/api';
+
+>>>>>>> b7456df (Meu primeiro commit)
 type Route = { path: string; params?: any };
 
 function App() {
   const [route, setRoute] = useState<Route>({ path: '/' });
   const [user, setUser] = useState<User | null>(null);
+<<<<<<< HEAD
   
   // App Loading State (Splash Screen)
   const [isAppLoading, setIsAppLoading] = useState(true);
   
   // GLOBAL STATE (Simulating Backend)
+=======
+  const [isAppLoading, setIsAppLoading] = useState(true);
+  
+  // GLOBAL STATE
+>>>>>>> b7456df (Meu primeiro commit)
   const [services, setServices] = useState<Service[]>(MOCK_SERVICES);
   const [bookings, setBookings] = useState<Booking[]>(MOCK_BOOKINGS);
   const [events, setEvents] = useState<EventItem[]>(MOCK_EVENTS);
   const [allUsers, setAllUsers] = useState<User[]>([MOCK_USER, MOCK_PROVIDER_USER, MOCK_ADMIN]);
 
+<<<<<<< HEAD
   // Toast Notification State
   const [toast, setToast] = useState<{msg: string, type: 'success' | 'error', visible: boolean}>({
     msg: '', type: 'success', visible: false
   });
+=======
+  const [toast, setToast] = useState<{msg: string, type: 'success' | 'error', visible: boolean}>({
+    msg: '', type: 'success', visible: false
+  });
+
+>>>>>>> b7456df (Meu primeiro commit)
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type, visible: true });
   };
 
+<<<<<<< HEAD
 
   // Chat State
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -59,18 +82,35 @@ function App() {
     const timer = setTimeout(() => {
       setIsAppLoading(false);
     }, 2500); // 2.5 seconds splash screen
+=======
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [activeServiceChat, setActiveServiceChat] = useState<{serviceName: string, providerId: string} | null>(null);
+  const [chatHistory, setChatHistory] = useState<Record<string, ChatMessage[]>>({});
+  const [bookingSelection, setBookingSelection] = useState<{date: Date, startTime: string, endTime: string} | null>(null);
+  const [bookingLocation, setBookingLocation] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsAppLoading(false);
+    }, 2000);
+>>>>>>> b7456df (Meu primeiro commit)
     return () => clearTimeout(timer);
   }, []);
 
   const navigate = (path: string, params?: any) => {
     window.scrollTo(0, 0);
     setRoute({ path, params });
+<<<<<<< HEAD
     setBookingSelection(null); // Reset booking on nav
+=======
+    setBookingSelection(null);
+>>>>>>> b7456df (Meu primeiro commit)
     setBookingLocation('');
   };
 
   const handleLogin = (loggedInUser: User) => {
     setUser(loggedInUser);
+<<<<<<< HEAD
     if (loggedInUser.role === 'admin') {
       navigate('/admin');
     } else if (loggedInUser.role === 'organizer') {
@@ -79,6 +119,11 @@ function App() {
       // Logic moved to Auth.tsx for registration redirection, but login lands here
       navigate('/provider-dashboard');
     }
+=======
+    if (loggedInUser.role === 'admin') navigate('/admin');
+    else if (loggedInUser.role === 'organizer') navigate('/dashboard');
+    else navigate('/provider-dashboard');
+>>>>>>> b7456df (Meu primeiro commit)
   };
 
   const handleRegister = (newUser: User) => {
@@ -86,6 +131,7 @@ function App() {
       handleLogin(newUser);
   };
 
+<<<<<<< HEAD
   // --- USER UPDATE HANDLER (Profile Edits) ---
   const handleUpdateUser = (updatedUser: User) => {
       // 1. Update the logged in user session if it matches
@@ -96,6 +142,11 @@ function App() {
       // 2. Update the "Database" of users
       setAllUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
       
+=======
+  const handleUpdateUser = (updatedUser: User) => {
+      if (user && user.id === updatedUser.id) setUser(updatedUser);
+      setAllUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+>>>>>>> b7456df (Meu primeiro commit)
       showToast('Perfil atualizado com sucesso!');
   };
 
@@ -104,27 +155,40 @@ function App() {
   };
 
   const handleCreateEvent = (newEvent: EventItem) => {
+<<<<<<< HEAD
       // Update the user ID if the current user is logged in
       if (user) {
           newEvent.organizerId = user.id;
       }
+=======
+      if (user) newEvent.organizerId = user.id;
+>>>>>>> b7456df (Meu primeiro commit)
       setEvents(prev => [newEvent, ...prev]);
       navigate('/dashboard');
   };
 
   const handleUpdateEvent = (updatedEvent: EventItem) => {
     setEvents(prev => prev.map(e => e.id === updatedEvent.id ? updatedEvent : e));
+<<<<<<< HEAD
     showToast('Evento atualizado com sucesso!');
+=======
+    showToast('Evento atualizado!');
+>>>>>>> b7456df (Meu primeiro commit)
   };
 
   const handleRemoveBooking = (bookingId: string) => {
     if (window.confirm("Tem a certeza que deseja cancelar este serviço?")) {
       setBookings(prev => prev.filter(b => b.id !== bookingId));
+<<<<<<< HEAD
       showToast('Serviço removido e orçamento atualizado.');
+=======
+      showToast('Serviço removido.');
+>>>>>>> b7456df (Meu primeiro commit)
     }
   };
 
   const handleCreateBooking = (serviceId: string, price: number, date: Date, bookingType: BookingType) => {
+<<<<<<< HEAD
      if (!user) {
         navigate('/login');
         return;
@@ -135,11 +199,17 @@ function App() {
      }
      
      // Construct correct ISO string including Start Time
+=======
+     if (!user) { navigate('/login'); return; }
+     if (!bookingLocation) { showToast("Indique a localização.", "error"); return; }
+     
+>>>>>>> b7456df (Meu primeiro commit)
      const startTime = bookingSelection?.startTime || "10:00";
      const [startH, startM] = startTime.split(':').map(Number);
      const bookingDate = new Date(date);
      bookingDate.setHours(startH, startM, 0, 0);
 
+<<<<<<< HEAD
      // Construct End Time ISO
      let endDate;
      if (bookingType === 'time_bound') {
@@ -154,6 +224,8 @@ function App() {
 
      // Find the most recent event created by user to attach booking to, or use temp
      // In a real app, user would select event from dropdown
+=======
+>>>>>>> b7456df (Meu primeiro commit)
      const userLastEvent = events.find(e => e.organizerId === user.id);
      const eventId = userLastEvent ? userLastEvent.id : 'temp-event';
 
@@ -162,17 +234,26 @@ function App() {
         eventId: eventId,
         serviceId: serviceId,
         status: 'pending',
+<<<<<<< HEAD
         date: bookingDate.toISOString(), // Start Time
         endDate: endDate.toISOString(),   // End Time
+=======
+        date: bookingDate.toISOString(),
+>>>>>>> b7456df (Meu primeiro commit)
         amount: price,
         location: bookingLocation
      };
      setBookings(prev => [newBooking, ...prev]);
+<<<<<<< HEAD
      showToast('Reserva enviada! O fornecedor confirmará o horário.');
+=======
+     showToast('Pedido enviado!');
+>>>>>>> b7456df (Meu primeiro commit)
      navigate('/dashboard');
   };
 
   const openChat = (serviceName: string, providerId: string) => {
+<<<<<<< HEAD
     if (!user) {
       navigate('/login');
       return;
@@ -190,10 +271,20 @@ function App() {
                 sender: 'provider',
                 timestamp: new Date()
             }]
+=======
+    if (!user) { navigate('/login'); return; }
+    setActiveServiceChat({ serviceName, providerId });
+    setIsChatOpen(true);
+    if (!chatHistory[providerId]) {
+        setChatHistory(prev => ({
+            ...prev,
+            [providerId]: [{ id: 'init', text: `Olá! Como posso ajudar com "${serviceName}"?`, sender: 'provider', timestamp: new Date() }]
+>>>>>>> b7456df (Meu primeiro commit)
         }));
     }
   };
 
+<<<<<<< HEAD
   const handleSendMessage = (text: string) => {
       if (!activeServiceChat) return;
       const providerId = activeServiceChat.providerId;
@@ -260,12 +351,22 @@ function App() {
             100% { transform: translateX(200%); }
           }
         `}</style>
+=======
+  if (isAppLoading) {
+    return (
+      <div className="fixed inset-0 bg-slate-50 z-[9999] flex flex-col items-center justify-center">
+        <div className="relative z-10 mb-8 animate-float">
+           <img src={APP_LOGO} alt="NKHUVO" className="w-24 h-24 rounded-2xl shadow-2xl object-cover" />
+        </div>
+        <h1 className="text-3xl font-bold text-slate-900 tracking-[0.3em] animate-pulse">NKHUVO.</h1>
+>>>>>>> b7456df (Meu primeiro commit)
       </div>
     );
   }
 
   const renderContent = () => {
     switch (route.path) {
+<<<<<<< HEAD
       case '/':
         return <Home onNavigate={navigate} services={services} />;
       
@@ -492,12 +593,53 @@ function App() {
                                     )}
                                 </div>
                             </div>
+=======
+      case '/': return <Home onNavigate={navigate} services={services} />;
+      case '/dashboard':
+        if (!user || user.role !== 'organizer') { navigate('/login'); return null; }
+        return <OrganizerDashboard user={user} onNavigate={navigate} events={events.filter(e => e.organizerId === user.id)} bookings={bookings} services={services} onUpdateEvent={handleUpdateEvent} onRemoveBooking={handleRemoveBooking} />;
+      case '/provider-dashboard':
+        if (!user || user.role !== 'provider') { navigate('/login'); return null; }
+        return <ProviderDashboard user={user} onNavigate={navigate} services={services} bookings={bookings} />;
+      case '/provider-profile':
+        if (!user || user.role !== 'provider') { navigate('/login'); return null; }
+        return <ProviderProfile user={user} onNavigate={navigate} services={services} onAddService={handleCreateService} onUpdateProfile={handleUpdateUser} isNewProvider={route.params?.new} />;
+      case '/admin':
+        if (!user || user.role !== 'admin') { navigate('/login'); return null; }
+        return <AdminDashboard user={user} onNavigate={navigate} users={allUsers} bookings={bookings} events={events} services={services} />;
+      case '/login': return <Auth mode="login" onLogin={handleLogin} onNavigate={navigate} />;
+      case '/register': return <Auth mode="register" onLogin={handleRegister} onNavigate={navigate} />;
+      case '/create-event': return <CreateEvent onNavigate={navigate} onFinish={handleCreateEvent} />;
+      case '/explore': return <Explore onNavigate={navigate} initialSearch={route.params?.search} initialLocation={route.params?.location} services={services} />;
+      case '/service-detail':
+        const service = services.find(s => s.id === route.params?.id);
+        if (!service) return <div>404</div>;
+        return (
+          <div className="min-h-screen pt-24 pb-12 px-4 bg-white">
+            <div className="max-w-6xl mx-auto">
+              <button onClick={() => navigate('/explore')} className="flex items-center text-slate-500 hover:text-indigo-600 mb-6"><ArrowLeft size={18} className="mr-2" /> Voltar</button>
+              <div className="grid lg:grid-cols-2 gap-12">
+                <div className="space-y-6">
+                  <div className="rounded-3xl overflow-hidden shadow-2xl h-[400px] lg:h-[600px] border border-slate-100">
+                    <img src={service.images[0]} className="w-full h-full object-cover" alt="Main" />
+                  </div>
+                </div>
+                <div>
+                   <div className="sticky top-24">
+                     <h1 className="text-4xl lg:text-5xl font-bold text-slate-900 mb-6">{service.name}</h1>
+                     <div className="bg-white rounded-3xl border border-slate-100 shadow-xl p-6 space-y-6">
+                        <AvailabilityCalendar unavailableDates={service.unavailableDates} bookedSlots={bookings.filter(b => b.serviceId === service.id)} onSelect={(date, start, end) => setBookingSelection({date, startTime: start, endTime: end})} bookingType={CATEGORIES.find(c => c.id === service.category)?.bookingType} />
+                        <div className="flex flex-col gap-4">
+                            <input type="text" placeholder="Localização do evento" className="w-full p-3 border rounded-xl" value={bookingLocation} onChange={e => setBookingLocation(e.target.value)} />
+                            <Button className="w-full py-4" disabled={!bookingSelection || !bookingLocation} onClick={() => handleCreateBooking(service.id, service.price, bookingSelection!.date, 'time_bound')}>Confirmar Reserva</Button>
+>>>>>>> b7456df (Meu primeiro commit)
                         </div>
                      </div>
                    </div>
                 </div>
               </div>
             </div>
+<<<<<<< HEAD
             
             {activeServiceChat && (
               <ChatModal 
@@ -540,6 +682,17 @@ function App() {
         isVisible={toast.visible} 
         onClose={() => setToast({ ...toast, visible: false })} 
       />
+=======
+          </div>
+        );
+      default: return <Home onNavigate={navigate} services={services} />;
+    }
+  };
+
+  return (
+    <div className="antialiased selection:bg-indigo-100">
+      <Toast message={toast.msg} type={toast.type} isVisible={toast.visible} onClose={() => setToast({ ...toast, visible: false })} />
+>>>>>>> b7456df (Meu primeiro commit)
       <Navbar user={user} onLogout={() => { setUser(null); navigate('/'); }} onNavigate={navigate} />
       {renderContent()}
       <Footer />
